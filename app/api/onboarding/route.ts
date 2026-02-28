@@ -11,6 +11,21 @@ export async function POST(req: NextRequest) {
 
   const { answer, step } = await req.json();
 
+  // Get profile for chart data
+  const profile = await db.profile.findUnique({
+    where: { userId: session.user.id },
+  });
+
+  const chartData = profile
+    ? {
+        sunSign: profile.sunSign || undefined,
+        moonSign: profile.moonSign || undefined,
+        risingSign: profile.risingSign || undefined,
+        chironSign: profile.chironSign || undefined,
+        shadows: profile.shadows || [],
+      }
+    : undefined;
+
   // Save the answer if provided
   if (answer !== undefined && step > 0) {
     const previousResponses = await db.onboardingResponse.findMany({
@@ -18,7 +33,8 @@ export async function POST(req: NextRequest) {
       orderBy: { step: "asc" },
     });
 
-    const lastQuestion = previousResponses[previousResponses.length - 1]?.question || "";
+    const lastQuestion =
+      previousResponses[previousResponses.length - 1]?.question || "";
 
     await db.onboardingResponse.create({
       data: {
@@ -39,18 +55,32 @@ export async function POST(req: NextRequest) {
   // If we have 10 responses, generate the profile
   if (allResponses.length >= 10) {
     const profileData = await generateProfile(
-      allResponses.map((r: { question: string; answer: string }) => ({ question: r.question, answer: r.answer }))
+      allResponses.map((r: { question: string; answer: string }) => ({
+        question: r.question,
+        answer: r.answer,
+      })),
+      chartData
     );
 
     await db.profile.upsert({
       where: { userId: session.user.id },
       update: {
-        ...profileData,
+        awarenessScore: profileData.awarenessScore,
+        values: profileData.values,
+        blindSpots: profileData.blindSpots,
+        strengths: profileData.strengths,
+        shadows: profileData.shadows || [],
+        personalitySummary: profileData.personalitySummary,
         onboardingComplete: true,
       },
       create: {
         userId: session.user.id,
-        ...profileData,
+        awarenessScore: profileData.awarenessScore,
+        values: profileData.values,
+        blindSpots: profileData.blindSpots,
+        strengths: profileData.strengths,
+        shadows: profileData.shadows || [],
+        personalitySummary: profileData.personalitySummary,
         onboardingComplete: true,
       },
     });
@@ -63,8 +93,12 @@ export async function POST(req: NextRequest) {
 
   // Generate next question
   const question = await generateOnboardingQuestion(
-    allResponses.map((r: { question: string; answer: string }) => ({ question: r.question, answer: r.answer })),
-    allResponses.length
+    allResponses.map((r: { question: string; answer: string }) => ({
+      question: r.question,
+      answer: r.answer,
+    })),
+    allResponses.length,
+    chartData
   );
 
   // Save the question for the next step

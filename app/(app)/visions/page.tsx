@@ -4,229 +4,219 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 
 interface Vision {
-  id: string;
   title: string;
   emoji: string;
+  archetype: string;
   narrative: string;
   milestones: string[];
   reasoning: string;
-  versionNumber: number;
+  cosmicAlignment: string;
 }
 
-const pathColors = [
-  { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", label: "Il Percorso Audace" },
-  { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400", label: "Il Percorso Saggio" },
-  { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400", label: "Il Percorso Profondo" },
-];
+const archetypeColors: Record<string, { bg: string; border: string; text: string }> = {
+  FUOCO: { bg: "bg-fire/5", border: "border-fire/20", text: "text-fire" },
+  ACQUA: { bg: "bg-water/5", border: "border-water/20", text: "text-water" },
+  STELLA: { bg: "bg-star/5", border: "border-star/20", text: "text-star" },
+};
 
 export default function VisionsPage() {
   const [topic, setTopic] = useState("");
-  const [loading, setLoading] = useState(false);
   const [visions, setVisions] = useState<Vision[]>([]);
+  const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
+  const generateVisions = async () => {
     if (!topic.trim() || loading) return;
-
     setLoading(true);
     setVisions([]);
-    setExpanded(null);
 
     try {
       const res = await fetch("/api/visions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim() }),
+        body: JSON.stringify({ topic }),
       });
       const data = await res.json();
-      if (data.visions) {
-        setVisions(data.visions);
-      }
+      if (data.visions) setVisions(data.visions);
     } catch {
-      // handle error
+      console.error("Error generating visions");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">Le Tre Visioni</h1>
-        <p className="text-text-secondary">
-          Descrivi un obiettivo, una decisione o un&apos;area della tua vita.
-          L&apos;AI creerà 3 futuri possibili, ognuno perfetto per te.
-        </p>
-      </motion.div>
+    <div className="min-h-screen p-6 relative">
+      <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
 
-      {/* Input */}
-      <motion.form
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        onSubmit={handleGenerate}
-        className="mb-10"
-      >
-        <Card variant="glass" className="space-y-4">
+      <div className="max-w-4xl mx-auto relative z-10">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <div className="text-4xl mb-4">🔮</div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            <span className="text-gradient-cosmic">Tre Visioni del Destino</span>
+          </h1>
+          <p className="text-text-secondary max-w-xl mx-auto">
+            Descrivi una decisione, un obiettivo, un&apos;area della tua vita.
+            L&apos;AI incrocia il tuo cielo con il tuo profilo e genera tre futuri cosmici.
+          </p>
+        </motion.div>
+
+        {/* Input */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass rounded-2xl p-6 mb-8"
+        >
           <Textarea
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="Es: Voglio cambiare lavoro, ma ho paura di lasciare la stabilità..."
+            placeholder="es. Voglio cambiare carriera... Sto pensando di trasferirmi... La mia relazione è a un bivio..."
             rows={3}
-            className="bg-transparent border-0 focus:ring-0 text-base"
+            disabled={loading}
           />
-          <div className="flex justify-end">
-            <Button type="submit" disabled={loading || !topic.trim()}>
+          <div className="mt-4 flex justify-end">
+            <Button
+              onClick={generateVisions}
+              disabled={!topic.trim() || loading}
+              className="cosmic-breathe"
+            >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Generando le visioni...
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Le stelle stanno parlando...
                 </span>
               ) : (
-                "Genera 3 Visioni"
+                "Genera le visioni cosmiche"
               )}
             </Button>
           </div>
-        </Card>
-      </motion.form>
-
-      {/* Loading */}
-      {loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-16"
-        >
-          <div className="flex justify-center gap-3 mb-6">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-4 h-4 rounded-full bg-accent float"
-                style={{ animationDelay: `${i * 0.4}s` }}
-              />
-            ))}
-          </div>
-          <p className="text-text-secondary">
-            Sto esplorando 3 futuri possibili per te...
-          </p>
         </motion.div>
-      )}
 
-      {/* Visions */}
-      <AnimatePresence>
-        {visions.length > 0 && (
+        {/* Loading */}
+        {loading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-4"
+            className="text-center py-16"
           >
-            <h2 className="text-xl font-semibold text-text-secondary mb-4">
-              I tuoi 3 futuri
-            </h2>
+            <div className="text-5xl glow-pulse mb-4">✦</div>
+            <p className="text-text-secondary">L&apos;AI sta consultando il tuo cielo...</p>
+            <p className="text-text-muted text-sm mt-2">Incrocio tema natale, ombre e transiti</p>
+          </motion.div>
+        )}
 
-            {visions.map((vision, i) => {
-              const color = pathColors[i] || pathColors[0];
-              const isExpanded = expanded === i;
+        {/* Visions */}
+        <AnimatePresence>
+          {visions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-6"
+            >
+              {visions.map((vision, i) => {
+                const colors = archetypeColors[vision.archetype] || archetypeColors.STELLA;
+                const isExpanded = expanded === i;
 
-              return (
-                <motion.div
-                  key={vision.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.15 }}
-                >
-                  <div
-                    className={`rounded-2xl border ${color.border} ${color.bg} p-6 cursor-pointer transition-all duration-500 hover:shadow-lg`}
-                    onClick={() => setExpanded(isExpanded ? null : i)}
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.2 }}
+                    className={`glass rounded-2xl overflow-hidden border ${colors.border} transition-all duration-500 ${isExpanded ? "glow" : ""}`}
                   >
                     {/* Header */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{vision.emoji}</span>
-                        <div>
-                          <div className={`text-xs font-medium ${color.text} uppercase tracking-wider mb-1`}>
-                            {color.label}
+                    <button
+                      onClick={() => setExpanded(isExpanded ? null : i)}
+                      className="w-full p-8 text-left"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="text-4xl">{vision.emoji}</div>
+                        <div className="flex-1">
+                          <div className={`text-xs font-medium ${colors.text} mb-1`}>
+                            {vision.archetype === "FUOCO" ? "🔥 La Via del Fuoco" :
+                              vision.archetype === "ACQUA" ? "💧 La Via dell'Acqua" :
+                                "⭐ La Via della Stella"}
                           </div>
                           <h3 className="text-xl font-bold">{vision.title}</h3>
+                          {!isExpanded && (
+                            <p className="text-text-muted text-sm mt-2">
+                              Clicca per esplorare questa visione →
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div
-                        className={`text-text-muted transition-transform duration-300 ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      >
-                        ▼
-                      </div>
-                    </div>
+                    </button>
 
-                    {/* Preview */}
-                    {!isExpanded && (
-                      <p className="text-text-secondary text-sm mt-3 line-clamp-2">
-                        {vision.narrative}
-                      </p>
-                    )}
-
-                    {/* Expanded */}
+                    {/* Expanded content */}
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3 }}
                           className="overflow-hidden"
                         >
-                          {/* Narrative */}
-                          <div className="mt-4 mb-6">
-                            <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                              La tua storia
-                            </h4>
-                            <p className="text-text-secondary leading-relaxed whitespace-pre-line">
-                              {vision.narrative}
-                            </p>
-                          </div>
-
-                          {/* Milestones */}
-                          <div className="mb-6">
-                            <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                              Milestones
-                            </h4>
-                            <div className="space-y-3">
-                              {vision.milestones.map((m, mi) => (
-                                <div key={mi} className="flex items-start gap-3">
-                                  <div className={`w-2 h-2 rounded-full ${color.text.replace("text-", "bg-")} mt-1.5 shrink-0`} />
-                                  <span className="text-sm text-text-secondary">{m}</span>
-                                </div>
-                              ))}
+                          <div className="px-8 pb-8 space-y-6">
+                            {/* Narrative */}
+                            <div className={`${colors.bg} rounded-xl p-6`}>
+                              <p className="text-text-secondary leading-relaxed italic">
+                                {vision.narrative}
+                              </p>
                             </div>
-                          </div>
 
-                          {/* Reasoning */}
-                          <div className="glass rounded-xl p-4">
-                            <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">
-                              Perché questa visione è per te
-                            </h4>
-                            <p className="text-sm text-text-secondary leading-relaxed">
-                              {vision.reasoning}
-                            </p>
+                            {/* Milestones */}
+                            <div>
+                              <h4 className={`text-sm font-medium ${colors.text} mb-3`}>
+                                Tappe cosmiche
+                              </h4>
+                              <div className="space-y-2">
+                                {vision.milestones?.map((m: string, j: number) => (
+                                  <div key={j} className="flex items-start gap-3 text-sm">
+                                    <div className={`w-2 h-2 rounded-full mt-1.5 ${colors.text} bg-current shrink-0`} />
+                                    <span className="text-text-secondary">{m}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Reasoning */}
+                            <div className="glass rounded-xl p-6">
+                              <h4 className={`text-sm font-medium ${colors.text} mb-2`}>
+                                Perché le stelle dicono questo
+                              </h4>
+                              <p className="text-text-muted text-sm leading-relaxed">
+                                {vision.reasoning}
+                              </p>
+                            </div>
+
+                            {/* Cosmic alignment */}
+                            {vision.cosmicAlignment && (
+                              <div className="text-center glass rounded-xl p-4">
+                                <span className="text-xs text-accent">
+                                  ✦ {vision.cosmicAlignment}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

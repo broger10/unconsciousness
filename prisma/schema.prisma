@@ -19,6 +19,7 @@ model User {
   visions       Vision[]
   checkins      DailyCheckin[]
   insights      Insight[]
+  journals      Journal[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -61,11 +62,37 @@ model Profile {
   id                 String   @id @default(cuid())
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Birth data
+  birthDate          DateTime?
+  birthTime          String?    // "HH:MM" format
+  birthCity          String?
+  birthLat           Float?
+  birthLng           Float?
+
+  // Natal chart (calculated)
+  sunSign            String?
+  moonSign           String?
+  risingSign         String?
+  mercurySign        String?
+  venusSign          String?
+  marsSign           String?
+  jupiterSign        String?
+  saturnSign         String?
+  chironSign         String?
+  northNodeSign      String?
+  natalChartData     Json?      // Full chart details
+
+  // Psychological profile
   awarenessScore     Int      @default(0)
   values             String[] @default([])
   blindSpots         String[] @default([])
   strengths          String[] @default([])
+  shadows            String[] @default([])
   personalitySummary String?  @db.Text
+  mythologyNarrative String?  @db.Text
+  shadowMapNarrative String?  @db.Text
+
   onboardingComplete Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -92,29 +119,45 @@ model Vision {
   narrative     String   @db.Text
   milestones    String[] @default([])
   reasoning     String   @db.Text
+  cosmicReason  String?  @db.Text  // Astrological reasoning
   emoji         String   @default("✨")
   sessionId     String
   createdAt     DateTime @default(now())
 }
 
 model DailyCheckin {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mood      Int
-  energy    Int
-  responses Json
-  aiInsight String?  @db.Text
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood           Int
+  energy         Int
+  cosmicEnergy   Int?     // 1-5 how aligned with the cosmos
+  responses      Json
+  aiInsight      String?  @db.Text
+  transitContext String?  @db.Text  // What transits were active
+  createdAt      DateTime @default(now())
 }
 
 model Insight {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String
+  type      String   // "transit", "shadow", "pattern", "growth", "prediction"
   title     String
   content   String   @db.Text
-  source    String?
+  source    String?  // "natal", "transit", "checkin", "journal"
+  urgency   Int      @default(0) // 0-10, how cosmically significant
   createdAt DateTime @default(now())
+}
+
+model Journal {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content        String   @db.Text
+  cosmicContext  String?  @db.Text  // What transits were active when written
+  aiReflection   String?  @db.Text  // AI analysis of the entry
+  mood           String?             // Detected mood
+  themes         String[] @default([])
+  createdAt      DateTime @default(now())
 }

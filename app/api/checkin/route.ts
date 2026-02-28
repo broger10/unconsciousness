@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { generateDailyInsight } from "@/lib/ai";
+import { generateCosmicCheckinInsight } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  const { mood, energy, responses } = await req.json();
+  const { mood, energy, cosmicEnergy, reflection } = await req.json();
 
   const profile = await db.profile.findUnique({
     where: { userId: session.user.id },
@@ -23,27 +23,29 @@ export async function POST(req: NextRequest) {
 
   let aiInsight: string | null = null;
   if (profile) {
-    aiInsight = await generateDailyInsight(
+    aiInsight = await generateCosmicCheckinInsight(
       {
-        values: profile.values,
-        blindSpots: profile.blindSpots,
-        personalitySummary: profile.personalitySummary,
+        sunSign: profile.sunSign || undefined,
+        moonSign: profile.moonSign || undefined,
+        risingSign: profile.risingSign || undefined,
       },
+      { mood, energy, cosmicEnergy, reflection },
       recentCheckins
     );
   }
 
-  const checkin = await db.dailyCheckin.create({
+  await db.dailyCheckin.create({
     data: {
       userId: session.user.id,
       mood,
       energy,
-      responses: responses || {},
+      cosmicEnergy: cosmicEnergy || null,
+      responses: reflection ? { reflection } : {},
       aiInsight,
     },
   });
 
-  return NextResponse.json({ checkin });
+  return NextResponse.json({ insight: aiInsight });
 }
 
 export async function GET() {
@@ -58,5 +60,23 @@ export async function GET() {
     take: 30,
   });
 
-  return NextResponse.json({ checkins });
+  // Calculate streak
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < checkins.length; i++) {
+    const checkinDate = new Date(checkins[i].createdAt);
+    checkinDate.setHours(0, 0, 0, 0);
+    const expectedDate = new Date(today);
+    expectedDate.setDate(expectedDate.getDate() - i);
+
+    if (checkinDate.getTime() === expectedDate.getTime()) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return NextResponse.json({ checkins, streak });
 }

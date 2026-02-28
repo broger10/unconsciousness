@@ -28,9 +28,14 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await generateVisions(topic, {
+    sunSign: profile.sunSign || undefined,
+    moonSign: profile.moonSign || undefined,
+    risingSign: profile.risingSign || undefined,
+    northNodeSign: profile.northNodeSign || undefined,
     values: profile.values,
     blindSpots: profile.blindSpots,
     strengths: profile.strengths,
+    shadows: profile.shadows,
     personalitySummary: profile.personalitySummary,
   });
 
@@ -42,9 +47,11 @@ export async function POST(req: NextRequest) {
         v: {
           title: string;
           emoji: string;
+          archetype: string;
           narrative: string;
           milestones: string[];
           reasoning: string;
+          cosmicAlignment?: string;
         },
         i: number
       ) =>
@@ -58,13 +65,14 @@ export async function POST(req: NextRequest) {
             narrative: v.narrative,
             milestones: v.milestones,
             reasoning: v.reasoning,
+            cosmicReason: v.cosmicAlignment || null,
             sessionId,
           },
         })
     )
   );
 
-  return NextResponse.json({ visions, sessionId });
+  return NextResponse.json({ visions: result.visions, sessionId });
 }
 
 export async function GET() {
@@ -78,7 +86,6 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  // Group by sessionId
   const grouped: Record<string, typeof visions> = {};
   for (const v of visions) {
     if (!grouped[v.sessionId]) grouped[v.sessionId] = [];

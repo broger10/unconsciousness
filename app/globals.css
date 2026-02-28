@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a2e;
-  --bg-glass: rgba(255, 255, 255, 0.03);
-  --accent: #818cf8;
-  --accent-secondary: #a78bfa;
-  --accent-glow: #6366f1;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-light: rgba(255, 255, 255, 0.1);
+  --bg-primary: #050510;
+  --bg-secondary: #0a0a1a;
+  --bg-tertiary: #10102a;
+  --bg-glass: rgba(255, 255, 255, 0.02);
+  --accent: #a78bfa;
+  --accent-secondary: #c084fc;
+  --accent-gold: #f5d485;
+  --accent-glow: #7c3aed;
+  --accent-cosmic: #818cf8;
+  --text-primary: #f1f0ff;
+  --text-secondary: #a5a3c7;
+  --text-muted: #5b5880;
+  --border: rgba(167, 139, 250, 0.08);
+  --border-light: rgba(167, 139, 250, 0.15);
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
+  --fire: #f97316;
+  --water: #38bdf8;
+  --star: #c084fc;
 }
 
 @theme inline {
@@ -26,6 +31,8 @@
   --color-accent: var(--accent);
   --color-accent-secondary: var(--accent-secondary);
   --color-accent-glow: var(--accent-glow);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-cosmic: var(--accent-cosmic);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
@@ -34,6 +41,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-fire: var(--fire);
+  --color-water: var(--water);
+  --color-star: var(--star);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -54,6 +64,25 @@ body {
   color: white;
 }
 
+/* Stars background */
+.stars-bg {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(167,139,250,0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(192,132,252,0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(245,212,133,0.4), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(167,139,250,0.2), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(192,132,252,0.3), transparent),
+    radial-gradient(1px 1px at 200px 60px, rgba(245,212,133,0.2), transparent);
+  background-size: 220px 100px;
+}
+
+/* Cosmic gradient */
+.cosmic-gradient {
+  background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 50%, rgba(167,139,250,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 20% 80%, rgba(192,132,252,0.05) 0%, transparent 40%);
+}
+
 @keyframes glow-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
@@ -69,16 +98,29 @@ body {
   100% { background-position: 200% 0; }
 }
 
-.glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
 }
 
-.float {
-  animation: float 6s ease-in-out infinite;
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
 }
+
+@keyframes cosmic-breathe {
+  0%, 100% { box-shadow: 0 0 20px rgba(167,139,250,0.1), 0 0 40px rgba(124,58,237,0.05); }
+  50% { box-shadow: 0 0 40px rgba(167,139,250,0.2), 0 0 80px rgba(124,58,237,0.1); }
+}
+
+.glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+.float { animation: float 6s ease-in-out infinite; }
+.twinkle { animation: twinkle 3s ease-in-out infinite; }
+.orbit { animation: orbit 20s linear infinite; }
+.cosmic-breathe { animation: cosmic-breathe 4s ease-in-out infinite; }
 
 .shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  background: linear-gradient(90deg, transparent, rgba(167,139,250,0.08), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
@@ -90,11 +132,18 @@ body {
 }
 
 .glow {
-  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15), 0 0 60px rgba(99, 102, 241, 0.05);
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.15), 0 0 60px rgba(124, 58, 237, 0.05);
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  background: linear-gradient(135deg, var(--accent), var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-cosmic {
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--accent-gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

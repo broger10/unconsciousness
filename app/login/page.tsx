@@ -3,38 +3,39 @@
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 relative">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-accent-glow/5 rounded-full blur-[120px]" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
+      <div className="fixed inset-0 stars-bg pointer-events-none opacity-30" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md mx-auto relative z-10"
       >
         <div className="text-center mb-10">
-          <Link href="/" className="text-2xl font-bold tracking-tight inline-block mb-6">
-            <span className="text-gradient">un</span>
-            <span className="text-text-primary">consciousness</span>
-          </Link>
-          <h1 className="text-3xl font-bold mb-3">Inizia il viaggio</h1>
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", delay: 0.2 }}
+            className="text-6xl mb-6"
+          >
+            ✦
+          </motion.div>
+          <h1 className="text-3xl font-bold mb-3">
+            <span className="text-gradient-cosmic">unconsciousness</span>
+          </h1>
           <p className="text-text-secondary">
-            Scopri chi sei davvero. L&apos;AI ti aspetta.
+            Accedi per scoprire il tuo cielo interiore
           </p>
         </div>
 
         <div className="glass rounded-2xl p-8 space-y-4">
           <Button
-            variant="secondary"
-            size="lg"
-            className="w-full justify-center gap-3"
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => signIn("google", { callbackUrl: "/onboarding" })}
+            className="w-full py-6 text-base flex items-center justify-center gap-3"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -57,46 +58,11 @@ export default function LoginPage() {
             Continua con Google
           </Button>
 
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-bg-primary px-4 text-text-muted">oppure</span>
-            </div>
+          <div className="text-center text-text-muted text-xs pt-4 space-y-2">
+            <p>🔒 I tuoi dati restano tuoi. Zero tracking.</p>
+            <p>Accedendo accetti i termini di servizio</p>
           </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const email = new FormData(e.currentTarget).get("email") as string;
-              signIn("email", { email, callbackUrl: "/dashboard" });
-            }}
-            className="space-y-4"
-          >
-            <input
-              name="email"
-              type="email"
-              placeholder="La tua email"
-              className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-border text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-all"
-              required
-            />
-            <Button type="submit" size="lg" className="w-full justify-center">
-              Continua con email
-            </Button>
-          </form>
         </div>
-
-        <p className="text-center text-text-muted text-xs mt-6">
-          Continuando, accetti i{" "}
-          <Link href="#" className="text-accent hover:underline">
-            Termini
-          </Link>{" "}
-          e la{" "}
-          <Link href="#" className="text-accent hover:underline">
-            Privacy Policy
-          </Link>
-        </p>
       </motion.div>
     </div>
   );

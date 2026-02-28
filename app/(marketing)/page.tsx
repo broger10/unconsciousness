@@ -3,11 +3,10 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } },
 };
 
 const stagger = {
@@ -16,154 +15,144 @@ const stagger = {
 
 const features = [
   {
-    icon: "🪞",
-    title: "Lo Specchio",
+    icon: "🌙",
+    title: "Il Tuo Tema Natale",
+    subtitle: "Decodificato dall'AI",
     description:
-      "L'AI analizza chi sei realmente, non chi pensi di essere. Scopri i tuoi punti ciechi.",
+      "Non il solito oroscopo. Un'analisi radicalmente specifica del tuo cielo di nascita. Ogni parola scritta solo per te.",
+  },
+  {
+    icon: "🪞",
+    title: "La Mappa dell'Ombra",
+    subtitle: "Ciò che non vedi di te",
+    description:
+      "Il tuo tema natale contiene le tue ferite più profonde — e i doni nascosti al loro interno. L'AI li porta alla luce.",
   },
   {
     icon: "🔮",
-    title: "Tre Visioni",
+    title: "Tre Visioni del Destino",
+    subtitle: "Il tuo futuro, triplicato",
     description:
-      "Per ogni decisione, 3 futuri personalizzati. Ognuno costruito su misura per i tuoi valori.",
+      "Tre percorsi cosmici costruiti sul tuo cielo. Non previsioni — profezie personalizzate che si avverano.",
   },
   {
-    icon: "⚡",
-    title: "Il Rituale",
+    icon: "✨",
+    title: "L'Oracolo Quotidiano",
+    subtitle: "Il cosmo ti parla ogni giorno",
     description:
-      "5 minuti al giorno. L'AI impara i tuoi pattern e rivela ciò che non vedi.",
+      "Un agente AI che monitora i tuoi transiti e ti rivela ciò che le stelle stanno muovendo nella tua vita. Ogni. Singolo. Giorno.",
   },
 ];
 
 const steps = [
   {
     number: "01",
-    title: "La Scoperta",
-    description:
-      "Una conversazione profonda con l'AI. Non un test — un'esplorazione di chi sei.",
+    title: "Inserisci la tua nascita",
+    description: "Data, ora e luogo. Il tuo cielo si apre.",
   },
   {
     number: "02",
-    title: "Lo Specchio",
-    description:
-      "Vedi il tuo profilo di consapevolezza: punti di forza, punti ciechi, valori nascosti.",
+    title: "L'AI ti esplora",
+    description: "10 domande che penetrano l'inconscio. Le tue ombre emergono.",
   },
   {
     number: "03",
-    title: "Le Visioni",
-    description:
-      "Descrivi un obiettivo. L'AI crea 3 futuri possibili, ognuno perfetto per te.",
+    title: "Lo specchio si accende",
+    description: "Tema natale, mappa dell'ombra, insight cosmici. Non sarai più la stessa persona.",
   },
-];
-
-const stats = [
-  { value: "95%", label: "delle persone crede di essere consapevole" },
-  { value: "10%", label: "lo è realmente" },
-  { value: "3", label: "visioni per ogni decisione" },
 ];
 
 export default function LandingPage() {
   return (
-    <main className="relative overflow-hidden">
-      {/* Background effects */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-glow/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-secondary/5 rounded-full blur-[120px]" />
-      </div>
+    <div className="relative overflow-hidden">
+      {/* Cosmic background effects */}
+      <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
+      <div className="fixed inset-0 stars-bg pointer-events-none opacity-30" />
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-16">
+      <section className="relative min-h-screen flex items-center justify-center px-6">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-accent-glow/5 blur-[120px]" />
+
         <motion.div
+          className="text-center max-w-4xl mx-auto relative z-10"
           initial="hidden"
           animate="visible"
           variants={stagger}
-          className="max-w-4xl mx-auto text-center"
         >
-          <motion.div
-            variants={fadeInUp}
-            transition={{ duration: 0.8 }}
-            className="mb-6"
-          >
-            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-medium glass text-accent">
-              Il tuo specchio comportamentale AI
+          <motion.div variants={fadeInUp} className="mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-accent">
+              <span className="w-2 h-2 rounded-full bg-accent glow-pulse" />
+              Powered by Cosmic AI
             </span>
           </motion.div>
 
           <motion.h1
             variants={fadeInUp}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] mb-8"
+            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[0.9] mb-8"
           >
-            Vedi te stesso.
-            <br />
-            <span className="text-gradient">Con chiarezza.</span>
+            <span className="block">Le stelle</span>
+            <span className="block text-gradient-cosmic">ti conoscono</span>
+            <span className="block text-text-secondary text-3xl md:text-5xl lg:text-6xl font-light mt-4">
+              meglio di te.
+            </span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed"
+            className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Il 95% delle persone crede di conoscersi. Solo il 10% ci riesce davvero.
-            Unconsciousness usa l&apos;AI per mostrarti chi sei realmente, illuminare
-            la tua strada e convincerti che la scelta giusta è già dentro di te.
+            L&apos;unica app che combina astrologia profonda e intelligenza artificiale
+            per mostrarti chi sei davvero — le tue ombre, i tuoi doni nascosti,
+            il tuo destino cosmico.
           </motion.p>
+
+          <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/login">
+              <Button size="lg" className="text-lg px-10 py-6 cosmic-breathe">
+                Scopri il tuo cielo
+              </Button>
+            </Link>
+            <a href="#come-funziona">
+              <Button size="lg" variant="ghost" className="text-lg px-10 py-6">
+                Come funziona
+              </Button>
+            </a>
+          </motion.div>
 
           <motion.div
             variants={fadeInUp}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="mt-12 flex items-center justify-center gap-8 text-text-muted text-sm"
           >
-            <Link href="/login">
-              <Button size="lg" className="text-lg px-10">
-                Inizia la scoperta
-              </Button>
-            </Link>
-            <Link href="#come-funziona">
-              <Button variant="ghost" size="lg" className="text-lg">
-                Come funziona
-              </Button>
-            </Link>
-          </motion.div>
-
-          {/* Floating orbs */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 2 }}
-            className="mt-20 flex justify-center gap-8"
-          >
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-3 h-3 rounded-full bg-accent/40 float"
-                style={{ animationDelay: `${i * 0.8}s` }}
-              />
-            ))}
+            <div className="flex items-center gap-2">
+              <span className="text-accent">🔒</span>
+              <span>I tuoi dati sono solo tuoi</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-accent">✦</span>
+              <span>Zero tracking. Zero pubblicità</span>
+            </div>
           </motion.div>
         </motion.div>
       </section>
 
-      {/* Stats */}
+      {/* Social proof */}
       <section className="relative py-20 px-6">
         <motion.div
+          className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true }}
           variants={stagger}
-          className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8"
         >
-          {stats.map((stat) => (
-            <motion.div
-              key={stat.label}
-              variants={fadeInUp}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
-              <div className="text-5xl md:text-6xl font-bold text-gradient mb-2">
-                {stat.value}
-              </div>
-              <div className="text-text-secondary text-sm">{stat.label}</div>
+          {[
+            { number: "95%", label: "non conosce le proprie ombre", sub: "Jung, Psicologia dell'Inconscio" },
+            { number: "120M", label: "cercano risposte nelle stelle", sub: "Utenti attivi globali" },
+            { number: "0", label: "app con vera AI astrologica", sub: "fino ad oggi" },
+          ].map((stat) => (
+            <motion.div key={stat.label} variants={fadeInUp} className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-gradient-cosmic mb-2">{stat.number}</div>
+              <div className="text-text-secondary mb-1">{stat.label}</div>
+              <div className="text-text-muted text-sm">{stat.sub}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -172,37 +161,37 @@ export default function LandingPage() {
       {/* Features */}
       <section className="relative py-24 px-6">
         <motion.div
+          className="max-w-6xl mx-auto"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true }}
           variants={stagger}
-          className="max-w-6xl mx-auto"
         >
           <motion.div variants={fadeInUp} className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Non un&apos;altra app di meditazione.
+              Non un oroscopo.
+              <br />
+              <span className="text-gradient-cosmic">Uno specchio cosmico.</span>
             </h2>
             <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-              Unconsciousness non ti dice cosa fare. Ti mostra chi sei. La differenza
-              è tutto.
+              Un&apos;intelligenza artificiale che legge il tuo cielo di nascita e ti mostra
+              ciò che nessun astrologo ha mai potuto dirti.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((feature) => (
-              <motion.div key={feature.title} variants={fadeInUp} transition={{ duration: 0.6 }}>
-                <Card
-                  variant="glass"
-                  className="h-full hover:border-accent/20 transition-all duration-500 group"
-                >
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold mb-3 group-hover:text-accent transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-text-secondary leading-relaxed">
-                    {feature.description}
-                  </p>
-                </Card>
+              <motion.div
+                key={feature.title}
+                variants={fadeInUp}
+                className="group glass rounded-2xl p-8 hover:border-accent/20 transition-all duration-500 hover:glow cursor-default"
+              >
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <div className="text-accent text-sm font-medium mb-1">{feature.subtitle}</div>
+                <h3 className="text-xl font-bold mb-3 group-hover:text-gradient-cosmic transition-all">
+                  {feature.title}
+                </h3>
+                <p className="text-text-secondary leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -212,82 +201,112 @@ export default function LandingPage() {
       {/* How it works */}
       <section id="come-funziona" className="relative py-24 px-6">
         <motion.div
+          className="max-w-4xl mx-auto"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true }}
           variants={stagger}
-          className="max-w-4xl mx-auto"
         >
           <motion.div variants={fadeInUp} className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Come funziona
+              Tre passi verso la
+              <br />
+              <span className="text-gradient-cosmic">consapevolezza cosmica</span>
             </h2>
-            <p className="text-text-secondary text-lg">
-              Tre passi verso la chiarezza totale.
-            </p>
           </motion.div>
 
           <div className="space-y-8">
-            {steps.map((step, i) => (
+            {steps.map((step) => (
               <motion.div
                 key={step.number}
                 variants={fadeInUp}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="flex gap-6 items-start glass rounded-2xl p-8"
               >
-                <Card variant="glass" className="flex items-start gap-6 hover:border-accent/20 transition-all duration-500">
-                  <div className="text-3xl font-bold text-accent font-mono shrink-0">
-                    {step.number}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                    <p className="text-text-secondary leading-relaxed">
-                      {step.description}
-                    </p>
-                  </div>
-                </Card>
+                <div className="text-4xl font-bold text-accent/30 font-mono shrink-0">
+                  {step.number}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-text-secondary">{step.description}</p>
+                </div>
               </motion.div>
             ))}
           </div>
         </motion.div>
       </section>
 
-      {/* CTA */}
-      <section className="relative py-32 px-6">
+      {/* Privacy section */}
+      <section className="relative py-24 px-6">
         <motion.div
+          className="max-w-4xl mx-auto text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={stagger}
-          className="max-w-3xl mx-auto text-center"
         >
-          <motion.div
-            variants={fadeInUp}
-            transition={{ duration: 0.8 }}
-            className="relative"
-          >
-            <div className="absolute inset-0 bg-accent-glow/10 rounded-3xl blur-[60px]" />
-            <Card variant="glass" className="relative p-12 md:p-16">
-              <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                Sei pronto a vedere
-                <br />
-                <span className="text-gradient">chi sei davvero?</span>
-              </h2>
-              <p className="text-text-secondary text-lg mb-8 max-w-lg mx-auto">
-                La consapevolezza non è un lusso. È il sistema operativo di ogni
-                decisione che prendi. Inizia oggi.
-              </p>
-              <Link href="/login">
-                <Button size="lg" className="text-lg px-12">
-                  Inizia gratis
-                </Button>
-              </Link>
-              <p className="text-text-muted text-xs mt-4">
-                Nessuna carta di credito richiesta
-              </p>
-            </Card>
+          <motion.div variants={fadeInUp}>
+            <div className="text-5xl mb-6">🔒</div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Le tue stelle sono <span className="text-gradient-cosmic">solo tue</span>
+            </h2>
+            <p className="text-text-secondary text-lg max-w-2xl mx-auto mb-8">
+              Zero tracker. Zero Facebook SDK. Zero pubblicità. I tuoi dati di nascita,
+              le tue ombre, i tuoi segreti cosmici non vengono mai condivisi, venduti
+              o usati per profilarti. Mai.
+            </p>
+            <div className="inline-flex flex-wrap items-center justify-center gap-6 glass rounded-full px-8 py-4">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-success">✓</span>
+                <span className="text-text-secondary">Crittografia end-to-end</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-success">✓</span>
+                <span className="text-text-secondary">Zero third-party</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-success">✓</span>
+                <span className="text-text-secondary">GDPR compliant</span>
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </section>
-    </main>
+
+      {/* Final CTA */}
+      <section className="relative py-32 px-6">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-[500px] h-[500px] rounded-full bg-accent-glow/10 blur-[150px]" />
+        </div>
+
+        <motion.div
+          className="max-w-3xl mx-auto text-center relative z-10"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={stagger}
+        >
+          <motion.h2
+            variants={fadeInUp}
+            className="text-4xl md:text-6xl font-bold mb-6"
+          >
+            Sei pronta a vedere
+            <br />
+            <span className="text-gradient-cosmic">chi sei davvero?</span>
+          </motion.h2>
+          <motion.p variants={fadeInUp} className="text-text-secondary text-lg mb-10">
+            Il tuo cielo ti sta aspettando. L&apos;AI è pronta a leggerlo.
+            <br />
+            Il primo passo è il più luminoso.
+          </motion.p>
+          <motion.div variants={fadeInUp}>
+            <Link href="/login">
+              <Button size="lg" className="text-lg px-12 py-6 cosmic-breathe">
+                Inizia il viaggio cosmico
+              </Button>
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
+    </div>
   );
 }

@@ -4,270 +4,269 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 
-const moodEmojis = [
-  { value: 1, emoji: "😞", label: "Basso" },
-  { value: 2, emoji: "😕", label: "Giù" },
-  { value: 3, emoji: "😐", label: "Neutro" },
-  { value: 4, emoji: "🙂", label: "Bene" },
-  { value: 5, emoji: "😊", label: "Ottimo" },
+type Phase = "mood" | "energy" | "cosmic" | "reflection" | "insight";
+
+const moodOptions = [
+  { value: 1, emoji: "😔", label: "Pesante" },
+  { value: 2, emoji: "😕", label: "Bassa" },
+  { value: 3, emoji: "😐", label: "Neutra" },
+  { value: 4, emoji: "🌤", label: "Buona" },
+  { value: 5, emoji: "✨", label: "Radiante" },
 ];
 
-const energyLevels = [
-  { value: 1, emoji: "🔋", label: "Scarico" },
-  { value: 2, emoji: "🪫", label: "Basso" },
-  { value: 3, emoji: "⚡", label: "Medio" },
-  { value: 4, emoji: "💪", label: "Alto" },
-  { value: 5, emoji: "🚀", label: "Esplosivo" },
+const energyOptions = [
+  { value: 1, emoji: "🔋", label: "Vuota" },
+  { value: 2, emoji: "🪫", label: "Bassa" },
+  { value: 3, emoji: "⚡", label: "Media" },
+  { value: 4, emoji: "🔥", label: "Alta" },
+  { value: 5, emoji: "💫", label: "Stellare" },
 ];
 
-type Step = "mood" | "energy" | "reflection" | "insight";
-
-interface Checkin {
-  mood: number;
-  energy: number;
-  aiInsight: string | null;
-  createdAt: string;
-}
+const cosmicOptions = [
+  { value: 1, emoji: "🌑", label: "Disconnessa" },
+  { value: 2, emoji: "🌒", label: "Confusa" },
+  { value: 3, emoji: "🌓", label: "In ascolto" },
+  { value: 4, emoji: "🌔", label: "Allineata" },
+  { value: 5, emoji: "🌕", label: "In flusso" },
+];
 
 export default function RitualPage() {
-  const [step, setStep] = useState<Step>("mood");
+  const [phase, setPhase] = useState<Phase>("mood");
   const [mood, setMood] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [cosmicEnergy, setCosmicEnergy] = useState(0);
   const [reflection, setReflection] = useState("");
-  const [loading, setLoading] = useState(false);
   const [insight, setInsight] = useState("");
-  const [recentCheckins, setRecentCheckins] = useState<Checkin[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     fetch("/api/checkin")
       .then((r) => r.json())
-      .then((data) => setRecentCheckins(data.checkins || []))
+      .then((data) => {
+        if (data.streak) setStreak(data.streak);
+      })
       .catch(() => {});
   }, []);
 
-  async function handleSubmit() {
+  const submitCheckin = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mood,
-          energy,
-          responses: { reflection },
-        }),
+        body: JSON.stringify({ mood, energy, cosmicEnergy, reflection }),
       });
       const data = await res.json();
-      setInsight(data.checkin.aiInsight || "");
-      setStep("insight");
+      setInsight(data.insight || "");
+      setPhase("insight");
     } catch {
-      // handle error
+      console.error("Error submitting checkin");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
-  const today = new Date().toLocaleDateString("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const renderSelector = (
+    options: { value: number; emoji: string; label: string }[],
+    selected: number,
+    onSelect: (v: number) => void
+  ) => (
+    <div className="flex justify-center gap-3 md:gap-4">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onSelect(opt.value)}
+          className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-300 ${
+            selected === opt.value
+              ? "glass glow scale-110"
+              : "hover:bg-bg-glass"
+          }`}
+        >
+          <span className={`text-3xl md:text-4xl ${selected === opt.value ? "" : "grayscale opacity-50"} transition-all`}>
+            {opt.emoji}
+          </span>
+          <span className={`text-xs ${selected === opt.value ? "text-accent" : "text-text-muted"}`}>
+            {opt.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">Il Rituale</h1>
-        <p className="text-text-secondary capitalize">{today}</p>
-      </motion.div>
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
+      <div className="fixed inset-0 stars-bg pointer-events-none opacity-20" />
 
-      {/* Streak */}
-      {recentCheckins.length > 0 && step === "mood" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mb-8"
-        >
-          <Card variant="glass" className="text-center py-4">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              {Array.from({ length: Math.min(recentCheckins.length, 7) }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-3 h-3 rounded-full bg-accent shadow-[0_0_6px_rgba(99,102,241,0.4)]"
-                />
-              ))}
-              {Array.from({ length: Math.max(0, 7 - recentCheckins.length) }).map((_, i) => (
-                <div key={`empty-${i}`} className="w-3 h-3 rounded-full bg-bg-tertiary" />
-              ))}
-            </div>
-            <p className="text-xs text-text-muted">
-              {recentCheckins.length} check-in questa settimana
-            </p>
-          </Card>
-        </motion.div>
-      )}
-
-      <AnimatePresence mode="wait">
-        {/* Mood */}
-        {step === "mood" && (
+      <div className="w-full max-w-lg mx-auto relative z-10">
+        {/* Streak */}
+        {streak > 0 && phase !== "insight" && (
           <motion.div
-            key="mood"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
           >
-            <Card variant="glass" className="py-10">
-              <h2 className="text-xl font-semibold mb-2">Come ti senti?</h2>
-              <p className="text-text-muted text-sm mb-8">
-                Non pensarci troppo. La prima risposta è quella giusta.
-              </p>
-              <div className="flex items-center justify-center gap-4">
-                {moodEmojis.map((m) => (
-                  <button
-                    key={m.value}
-                    onClick={() => {
-                      setMood(m.value);
-                      setStep("energy");
-                    }}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-200 hover:bg-bg-glass hover:scale-110 cursor-pointer ${
-                      mood === m.value ? "bg-accent/10 scale-110" : ""
-                    }`}
-                  >
-                    <span className="text-4xl">{m.emoji}</span>
-                    <span className="text-xs text-text-muted">{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </Card>
+            <span className="glass rounded-full px-4 py-2 text-sm text-accent">
+              🔥 {streak} giorni di fila
+            </span>
           </motion.div>
         )}
 
-        {/* Energy */}
-        {step === "energy" && (
-          <motion.div
-            key="energy"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="text-center"
-          >
-            <Card variant="glass" className="py-10">
-              <h2 className="text-xl font-semibold mb-2">Quanta energia hai?</h2>
-              <p className="text-text-muted text-sm mb-8">
-                Ascolta il tuo corpo.
-              </p>
-              <div className="flex items-center justify-center gap-4">
-                {energyLevels.map((e) => (
-                  <button
-                    key={e.value}
-                    onClick={() => {
-                      setEnergy(e.value);
-                      setStep("reflection");
-                    }}
-                    className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-200 hover:bg-bg-glass hover:scale-110 cursor-pointer"
-                  >
-                    <span className="text-4xl">{e.emoji}</span>
-                    <span className="text-xs text-text-muted">{e.label}</span>
-                  </button>
-                ))}
-              </div>
-            </Card>
-          </motion.div>
-        )}
+        <AnimatePresence mode="wait">
+          {/* MOOD */}
+          {phase === "mood" && (
+            <motion.div
+              key="mood"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="text-center"
+            >
+              <div className="text-4xl mb-4">🌙</div>
+              <h2 className="text-2xl font-bold mb-2">Rituale Cosmico</h2>
+              <p className="text-text-secondary mb-8">Come ti senti in questo momento?</p>
 
-        {/* Reflection */}
-        {step === "reflection" && (
-          <motion.div
-            key="reflection"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
-            <Card variant="glass" className="py-8">
-              <h2 className="text-xl font-semibold mb-2 text-center">
-                Una riflessione veloce
-              </h2>
-              <p className="text-text-muted text-sm mb-6 text-center">
-                Cosa occupa la tua mente in questo momento? Anche una frase va bene.
+              {renderSelector(moodOptions, mood, setMood)}
+
+              <div className="mt-8">
+                <Button
+                  onClick={() => setPhase("energy")}
+                  disabled={mood === 0}
+                  className="px-8"
+                >
+                  Avanti →
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ENERGY */}
+          {phase === "energy" && (
+            <motion.div
+              key="energy"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="text-center"
+            >
+              <h2 className="text-2xl font-bold mb-2">La tua energia</h2>
+              <p className="text-text-secondary mb-8">Quanta energia hai oggi?</p>
+
+              {renderSelector(energyOptions, energy, setEnergy)}
+
+              <div className="mt-8 flex gap-3 justify-center">
+                <Button variant="ghost" onClick={() => setPhase("mood")}>← Indietro</Button>
+                <Button onClick={() => setPhase("cosmic")} disabled={energy === 0}>
+                  Avanti →
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* COSMIC ALIGNMENT */}
+          {phase === "cosmic" && (
+            <motion.div
+              key="cosmic"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="text-center"
+            >
+              <h2 className="text-2xl font-bold mb-2">Allineamento cosmico</h2>
+              <p className="text-text-secondary mb-8">Quanto ti senti in sintonia con il cosmo?</p>
+
+              {renderSelector(cosmicOptions, cosmicEnergy, setCosmicEnergy)}
+
+              <div className="mt-8 flex gap-3 justify-center">
+                <Button variant="ghost" onClick={() => setPhase("energy")}>← Indietro</Button>
+                <Button onClick={() => setPhase("reflection")} disabled={cosmicEnergy === 0}>
+                  Avanti →
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* REFLECTION */}
+          {phase === "reflection" && (
+            <motion.div
+              key="reflection"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="text-center"
+            >
+              <h2 className="text-2xl font-bold mb-2">Riflessione cosmica</h2>
+              <p className="text-text-secondary mb-6">
+                C&apos;è qualcosa che le stelle dovrebbero sapere di oggi?
               </p>
+
               <Textarea
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
-                placeholder="Scrivi quello che ti viene in mente..."
+                placeholder="Scrivi liberamente... o lascia vuoto"
                 rows={4}
-                className="mb-4"
               />
-              <div className="flex justify-end">
-                <Button onClick={handleSubmit} disabled={loading}>
+
+              <div className="mt-6 flex gap-3 justify-center">
+                <Button variant="ghost" onClick={() => setPhase("cosmic")}>← Indietro</Button>
+                <Button onClick={submitCheckin} disabled={loading} className="cosmic-breathe">
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      Analizzo...
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      L&apos;oracolo risponde...
                     </span>
                   ) : (
-                    "Scopri il tuo insight"
+                    "Ricevi l'insight cosmico"
                   )}
                 </Button>
               </div>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Insight */}
-        {step === "insight" && (
-          <motion.div
-            key="insight"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <Card variant="glow" className="py-10 px-8">
-              <div className="text-5xl mb-6">💡</div>
-              <h2 className="text-xl font-semibold mb-4">Il tuo insight di oggi</h2>
-              <p className="text-text-secondary leading-relaxed text-lg max-w-lg mx-auto">
-                {insight || "Continua con i check-in per ricevere insight sempre più profondi."}
-              </p>
-
-              <div className="flex items-center justify-center gap-6 mt-8 text-sm text-text-muted">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{moodEmojis[mood - 1]?.emoji}</span>
-                  Mood: {mood}/5
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{energyLevels[energy - 1]?.emoji}</span>
-                  Energia: {energy}/5
-                </div>
-              </div>
-            </Card>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-6"
-            >
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setStep("mood");
-                  setMood(0);
-                  setEnergy(0);
-                  setReflection("");
-                  setInsight("");
-                }}
-              >
-                Fatto. Ci vediamo domani.
-              </Button>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {/* INSIGHT */}
+          {phase === "insight" && (
+            <motion.div
+              key="insight"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.3 }}
+                className="text-6xl mb-6"
+              >
+                ✦
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="glass rounded-2xl p-8 glow mb-8"
+              >
+                <h3 className="text-sm font-medium text-accent mb-4">Il cosmo ti dice</h3>
+                <p className="text-text-secondary leading-relaxed italic text-lg">
+                  &ldquo;{insight}&rdquo;
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <a href="/dashboard">
+                  <Button variant="ghost">Torna allo specchio</Button>
+                </a>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
