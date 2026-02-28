@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", icon: "✦", label: "Specchio" },
-  { href: "/visions", icon: "🔮", label: "Visioni" },
-  { href: "/ritual", icon: "🌙", label: "Rituale" },
-  { href: "/settings", icon: "⚙", label: "Cielo" },
+  { href: "/dashboard", icon: "&#9670;", label: "Specchio" },
+  { href: "/visions", icon: "&#9672;", label: "Visioni" },
+  { href: "/ritual", icon: "&#9790;", label: "Rituale" },
+  { href: "/settings", icon: "&#9881;", label: "Cielo" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,8 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-20 border-r border-border glass fixed h-full z-40">
         <div className="p-4 flex flex-col items-center">
-          <Link href="/dashboard" className="text-2xl mb-8 mt-2 glow-pulse">
-            ✦
+          <Link href="/dashboard" className="text-xl text-amber mb-8 mt-2 ember-pulse">
+            &#9670;
           </Link>
           <nav className="flex flex-col gap-4">
             {navItems.map((item) => (
@@ -34,19 +34,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex flex-col items-center gap-1 p-3 rounded-xl transition-all text-center",
                   pathname === item.href
-                    ? "bg-accent/10 text-accent"
+                    ? "bg-amber/10 text-amber"
                     : "text-text-muted hover:text-text-secondary hover:bg-bg-glass"
                 )}
               >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-[10px]">{item.label}</span>
+                <span className="text-xl" dangerouslySetInnerHTML={{ __html: item.icon }} />
+                <span className="text-[10px] font-ui">{item.label}</span>
               </Link>
             ))}
           </nav>
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 md:ml-20 pb-24 md:pb-0">{children}</main>
 
       {/* Mobile bottom nav */}
@@ -58,13 +57,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-xl transition-all",
-                pathname === item.href
-                  ? "text-accent"
-                  : "text-text-muted"
+                pathname === item.href ? "text-amber" : "text-text-muted"
               )}
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px]">{item.label}</span>
+              <span className="text-xl" dangerouslySetInnerHTML={{ __html: item.icon }} />
+              <span className="text-[10px] font-ui">{item.label}</span>
             </Link>
           ))}
         </div>

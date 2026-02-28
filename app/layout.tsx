@@ -1,23 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Syne, Cormorant_Infant } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fraunces = Fraunces({
   subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const syne = Syne({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-syne",
+  display: "swap",
+});
+
+const cormorantInfant = Cormorant_Infant({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Unconsciousness — See Yourself Clearly",
+  title: "unconsciousness — il tuo specchio cosmico",
   description:
-    "AI-powered self-awareness platform. Discover your blind spots, generate personalized visions of your future, and make decisions with clarity.",
-  keywords: ["self-awareness", "AI", "personal growth", "behavioral mirror", "vision"],
+    "L'unica app che combina astrologia profonda e AI per mostrarti chi sei davvero. Le tue ombre, i tuoi doni nascosti, il tuo destino cosmico.",
+  keywords: ["astrologia", "AI", "tema natale", "consapevolezza", "oroscopo intelligente"],
 };
 
 export default function RootLayout({
@@ -28,8 +39,9 @@ export default function RootLayout({
   return (
     <html lang="it" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${fraunces.variable} ${syne.variable} ${cormorantInfant.variable} antialiased min-h-screen grain`}
       >
+        <div className="fixed inset-0 aurora-bg pointer-events-none" />
         <Providers>{children}</Providers>
       </body>
     </html>

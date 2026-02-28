@@ -11,10 +11,6 @@ interface Profile {
   sunSign: string;
   moonSign: string;
   risingSign: string;
-  venusSign: string;
-  marsSign: string;
-  chironSign: string;
-  northNodeSign: string;
   awarenessScore: number;
   values: string[];
   blindSpots: string[];
@@ -22,48 +18,63 @@ interface Profile {
   shadows: string[];
   personalitySummary: string;
   mythologyNarrative: string;
-  shadowMapNarrative: string;
   onboardingComplete: boolean;
 }
 
-const zodiacEmojis: Record<string, string> = {
-  Ariete: "♈", Toro: "♉", Gemelli: "♊", Cancro: "♋",
-  Leone: "♌", Vergine: "♍", Bilancia: "♎", Scorpione: "♏",
-  Sagittario: "♐", Capricorno: "♑", Acquario: "♒", Pesci: "♓",
-  Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋",
-  Leo: "♌", Virgo: "♍", Libra: "♎", Scorpio: "♏",
-  Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
+const zodiac: Record<string, string> = {
+  Ariete: "\u2648", Toro: "\u2649", Gemelli: "\u264A", Cancro: "\u264B",
+  Leone: "\u264C", Vergine: "\u264D", Bilancia: "\u264E", Scorpione: "\u264F",
+  Sagittario: "\u2650", Capricorno: "\u2651", Acquario: "\u2652", Pesci: "\u2653",
+  Aries: "\u2648", Taurus: "\u2649", Gemini: "\u264A", Cancer: "\u264B",
+  Leo: "\u264C", Virgo: "\u264D", Libra: "\u264E", Scorpio: "\u264F",
+  Sagittarius: "\u2650", Capricorn: "\u2651", Aquarius: "\u2652", Pisces: "\u2653",
 };
+
+/* Premium deceleration curve */
+const premium = [0.16, 1, 0.3, 1] as const;
+
+/* Cosmic progression levels */
+const levels = [
+  { name: "Iniziato", min: 0, symbol: "&#9676;", color: "text-text-muted" },
+  { name: "Cercatore", min: 20, symbol: "&#9681;", color: "text-amber-dim" },
+  { name: "Mistico", min: 50, symbol: "&#9670;", color: "text-amber" },
+  { name: "Oracolo", min: 80, symbol: "&#10038;", color: "text-amber-glow" },
+];
+
+function getLevel(score: number) {
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (score >= levels[i].min) return { ...levels[i], index: i };
+  }
+  return { ...levels[0], index: 0 };
+}
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>("scopri");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [dailyInsight, setDailyInsight] = useState("");
+  const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.profile) {
-          setProfile(data.profile);
-          setDailyInsight(data.dailyInsight || "");
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch("/api/profile").then((r) => r.json()),
+      fetch("/api/checkin").then((r) => r.json()).catch(() => ({ streak: 0 })),
+    ]).then(([profileData, checkinData]) => {
+      if (profileData.profile) {
+        setProfile(profileData.profile);
+        setDailyInsight(profileData.dailyInsight || "");
+      }
+      if (checkinData.streak) setStreak(checkinData.streak);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <div className="text-5xl cosmic-breathe mb-4">✦</div>
-          <p className="text-text-muted text-sm">Allineo le stelle...</p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+          <div className="text-4xl text-amber ember-pulse mb-4">&#9670;</div>
+          <p className="text-text-muted text-sm font-ui">Allineo le stelle...</p>
         </motion.div>
       </div>
     );
@@ -71,80 +82,144 @@ export default function DashboardPage() {
 
   if (!profile || !profile.onboardingComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6 relative">
+        <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md"
+          transition={{ duration: 0.7, ease: premium }}
+          className="text-center max-w-md relative z-10"
         >
-          <div className="text-7xl mb-6 cosmic-breathe">✦</div>
-          <h1 className="text-4xl font-bold mb-4 leading-tight">
-            Il tuo cielo
-            <br />
-            <span className="text-gradient-cosmic">ti aspetta</span>
+          <div className="text-6xl text-amber mb-6 breathe">&#9670;</div>
+          <h1 className="text-4xl font-bold font-display mb-4 leading-tight">
+            Il tuo cielo <br /><span className="text-gradient">ti aspetta</span>
           </h1>
-          <p className="text-text-secondary mb-10">
+          <p className="text-text-secondary mb-10 font-body text-lg italic">
             Tre minuti per aprire il portale della consapevolezza cosmica.
           </p>
           <Link href="/onboarding">
-            <Button size="lg" className="text-lg px-12 py-6 cosmic-breathe">
-              Apri il portale
-            </Button>
+            <Button size="lg" className="text-lg px-12 py-6 breathe dimensional">Apri il portale</Button>
           </Link>
         </motion.div>
       </div>
     );
   }
 
+  const level = getLevel(profile.awarenessScore);
+  const nextLevel = levels[level.index + 1];
+
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
-      <div className="fixed inset-0 stars-bg pointer-events-none opacity-15" />
+      <div className="fixed inset-0 alchemy-bg pointer-events-none opacity-15" />
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-28">
-        {/* Mini identity bar */}
+        {/* Identity bar + streak */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-center gap-4 mb-8 text-sm text-text-muted"
+          transition={{ duration: 0.5, ease: premium }}
+          className="flex items-center justify-between mb-6"
         >
-          <span>{zodiacEmojis[profile.sunSign] || "☀"} {profile.sunSign}</span>
-          <span className="text-border-light">·</span>
-          <span>🌙 {profile.moonSign}</span>
-          <span className="text-border-light">·</span>
-          <span>↑ {profile.risingSign}</span>
+          <div className="flex items-center gap-3 text-sm text-text-muted font-ui">
+            <span>{zodiac[profile.sunSign] || "&#9788;"} {profile.sunSign}</span>
+            <span className="text-border-light">&#183;</span>
+            <span>&#9790; {profile.moonSign}</span>
+            <span className="text-border-light">&#183;</span>
+            <span>&#8593; {profile.risingSign}</span>
+          </div>
+          {streak > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 12 }}
+              className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5"
+            >
+              <span className="text-amber text-xs ember-pulse">&#9670;</span>
+              <span className="text-amber text-xs font-bold font-ui">{streak}</span>
+              <span className="text-text-muted text-[10px] font-ui">giorni</span>
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Tab switcher */}
-        <div className="flex gap-2 mb-8">
-          {[
+        {/* Cosmic Level */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: premium }}
+          className="glass rounded-2xl p-5 mb-6 dimensional"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <span className={`text-2xl ${level.color}`} dangerouslySetInnerHTML={{ __html: level.symbol }} />
+              <div>
+                <div className="text-xs text-text-muted font-ui tracking-wider">LIVELLO COSMICO</div>
+                <div className={`text-lg font-bold font-display ${level.color}`}>{level.name}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-black font-display text-gradient">{profile.awarenessScore}%</div>
+              <div className="text-[10px] text-text-muted font-ui">consapevolezza</div>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="relative h-1.5 rounded-full bg-bg-card overflow-hidden">
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ background: "linear-gradient(90deg, #C9A96E, #4E9E8A)" }}
+              initial={{ width: "0%" }}
+              animate={{ width: `${profile.awarenessScore}%` }}
+              transition={{ duration: 1.5, ease: premium }}
+            />
+          </div>
+          {nextLevel && (
+            <div className="mt-2 flex justify-between text-[10px] text-text-muted font-ui">
+              <span>{level.name}</span>
+              <span>{nextLevel.name} a {nextLevel.min}%</span>
+            </div>
+          )}
+          {/* Level progression dots */}
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {levels.map((l, i) => (
+              <div key={l.name} className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
+                  i <= level.index ? "bg-amber" : "bg-bg-card"
+                } ${i === level.index ? "ember-pulse ring-2 ring-amber/20" : ""}`} />
+                {i < levels.length - 1 && (
+                  <div className={`w-6 h-px ${i < level.index ? "bg-amber/40" : "bg-bg-card"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <div className="flex gap-3 mb-6">
+          {([
             { id: "scopri" as Tab, label: "SCOPRI", sub: "Chi sei davvero" },
             { id: "vivi" as Tab, label: "VIVI", sub: "Agisci e trasforma" },
-          ].map((t) => (
+          ]).map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex-1 rounded-2xl p-5 text-left transition-all duration-500 ${
                 tab === t.id
-                  ? "glass glow border-accent/20"
+                  ? "glass glow border-amber/15 dimensional"
                   : "bg-bg-glass/30 border border-transparent hover:border-border"
               }`}
             >
-              <div
-                className={`text-2xl font-black tracking-tight ${
-                  tab === t.id ? "text-gradient-cosmic" : "text-text-muted"
-                }`}
-              >
+              <div className={`text-2xl font-black tracking-tight font-display ${
+                tab === t.id ? "text-gradient" : "text-text-muted"
+              }`}>
                 {t.label}
               </div>
-              <div className={`text-xs mt-1 ${tab === t.id ? "text-text-secondary" : "text-text-muted"}`}>
+              <div className={`text-xs mt-1 font-ui ${tab === t.id ? "text-text-secondary" : "text-text-muted"}`}>
                 {t.sub}
               </div>
             </button>
           ))}
         </div>
 
-        {/* Content */}
         <AnimatePresence mode="wait">
           {tab === "scopri" && (
             <motion.div
@@ -152,73 +227,80 @@ export default function DashboardPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.4, ease: premium }}
               className="space-y-4"
             >
-              {/* Il Tuo Cielo — Identity Card */}
               <Link href="/settings">
-                <FeatureCard
-                  gradient="from-violet-500/10 to-indigo-500/10"
-                  borderColor="border-violet-500/15"
-                  icon="✦"
-                  title="Il Tuo Cielo"
-                  subtitle="Tema natale completo"
-                  description={`${zodiacEmojis[profile.sunSign] || ""} Sole ${profile.sunSign} · 🌙 Luna ${profile.moonSign} · ↑ ${profile.risingSign}`}
-                  tag="IDENTITÀ COSMICA"
-                  tagColor="text-violet-400"
-                />
+                <motion.div whileTap={{ scale: 0.98 }} className="rounded-2xl p-6 border border-amber/15 bg-gradient-to-br from-amber/8 to-verdigris/5 hover:glow transition-all duration-500 cursor-pointer group dimensional">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="text-3xl text-amber">&#9670;</div>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-amber/60 font-ui">IDENTIT&Agrave; COSMICA</span>
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">Il Tuo Cielo</h3>
+                  <p className="text-sm text-text-secondary font-ui mb-2">Tema natale completo</p>
+                  <p className="text-xs text-text-muted font-body">{zodiac[profile.sunSign]} Sole {profile.sunSign} &#183; &#9790; Luna {profile.moonSign} &#183; &#8593; {profile.risingSign}</p>
+                  <div className="mt-4 flex items-center gap-1 text-xs text-amber opacity-0 group-hover:opacity-100 transition-opacity font-ui">Esplora &#8594;</div>
+                </motion.div>
               </Link>
 
-              {/* Mappa dell'Ombra */}
               <Link href="/settings">
-                <FeatureCard
-                  gradient="from-red-500/8 to-orange-500/8"
-                  borderColor="border-red-500/10"
-                  icon="🌑"
-                  title="Mappa dell&apos;Ombra"
-                  subtitle="I tuoi punti ciechi rivelati"
-                  description={profile.shadows?.[0] || "Le ferite che nascondono i tuoi doni più grandi"}
-                  tag="MAI VISTO PRIMA"
-                  tagColor="text-red-400"
-                />
+                <motion.div whileTap={{ scale: 0.98 }} className="rounded-2xl p-6 border border-sienna/10 bg-gradient-to-br from-sienna/6 to-amber/3 hover:glow transition-all duration-500 cursor-pointer group dimensional">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="text-3xl text-sienna">&#9681;</div>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-sienna/60 font-ui">MAI VISTO PRIMA</span>
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">Mappa dell&apos;Ombra</h3>
+                  <p className="text-sm text-text-secondary font-ui mb-2">I tuoi punti ciechi rivelati</p>
+                  {/* Curiosity gap — partially blurred content */}
+                  <p className="text-xs text-text-muted font-body italic">{profile.shadows?.[0] || "Le ferite che nascondono i doni pi\u00f9 grandi"}</p>
+                  {profile.shadows && profile.shadows.length > 1 && (
+                    <p className="text-xs text-text-muted/40 font-body italic mt-1 curiosity-blur">
+                      {profile.shadows[1]} &#183; e altre ombre nascoste che solo tu puoi vedere...
+                    </p>
+                  )}
+                  <div className="mt-4 flex items-center gap-1 text-xs text-sienna opacity-0 group-hover:opacity-100 transition-opacity font-ui">Esplora &#8594;</div>
+                </motion.div>
               </Link>
 
-              {/* Mitologia Personale */}
               <Link href="/settings">
-                <FeatureCard
-                  gradient="from-amber-500/8 to-yellow-500/8"
-                  borderColor="border-amber-500/10"
-                  icon="📜"
-                  title="La Tua Mitologia"
-                  subtitle="Il mito che sei qui per vivere"
-                  description="Il tuo tema natale racconta una storia archetipica. Scoprila."
-                  tag="NARRATIVA COSMICA"
-                  tagColor="text-amber-400"
-                />
+                <motion.div whileTap={{ scale: 0.98 }} className="rounded-2xl p-6 border border-amber-glow/10 bg-gradient-to-br from-amber-glow/5 to-amber/3 hover:glow transition-all duration-500 cursor-pointer group dimensional">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="text-3xl text-amber-glow">&#10038;</div>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-amber-glow/60 font-ui">NARRATIVA COSMICA</span>
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">La Tua Mitologia</h3>
+                  <p className="text-sm text-text-secondary font-ui mb-2">Il mito che sei qui per vivere</p>
+                  {profile.mythologyNarrative ? (
+                    <p className="text-xs text-text-muted font-body italic curiosity-blur">{profile.mythologyNarrative.slice(0, 120)}...</p>
+                  ) : (
+                    <p className="text-xs text-text-muted font-body italic">La storia archetipica scritta nel tuo cielo.</p>
+                  )}
+                  <div className="mt-4 flex items-center gap-1 text-xs text-amber-glow opacity-0 group-hover:opacity-100 transition-opacity font-ui">Esplora &#8594;</div>
+                </motion.div>
               </Link>
 
-              {/* Awareness Score */}
-              <div className="glass rounded-2xl p-6 border border-border">
+              {/* Awareness Score with ring */}
+              <div className="glass rounded-2xl p-6 dimensional">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs text-accent mb-1">LIVELLO DI CONSAPEVOLEZZA</div>
-                    <div className="text-4xl font-black text-gradient-cosmic">{profile.awarenessScore}%</div>
+                    <div className="text-xs text-amber mb-1 font-ui tracking-wider">CONSAPEVOLEZZA</div>
+                    <div className="text-4xl font-black font-display text-gradient">{profile.awarenessScore}%</div>
                   </div>
                   <div className="relative w-20 h-20">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(167,139,250,0.1)" strokeWidth="8" />
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(201,169,110,0.1)" strokeWidth="8" />
                       <motion.circle
-                        cx="50" cy="50" r="42"
-                        fill="none" stroke="url(#dash-grad)" strokeWidth="8"
+                        cx="50" cy="50" r="42" fill="none" stroke="url(#alch-grad)" strokeWidth="8"
                         strokeLinecap="round"
                         strokeDasharray={`${(profile.awarenessScore / 100) * 264} 264`}
                         initial={{ strokeDasharray: "0 264" }}
                         animate={{ strokeDasharray: `${(profile.awarenessScore / 100) * 264} 264` }}
-                        transition={{ duration: 2, ease: "easeOut" }}
+                        transition={{ duration: 2, ease: premium }}
                       />
                       <defs>
-                        <linearGradient id="dash-grad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#a78bfa" />
-                          <stop offset="100%" stopColor="#f5d485" />
+                        <linearGradient id="alch-grad" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#C9A96E" />
+                          <stop offset="100%" stopColor="#4E9E8A" />
                         </linearGradient>
                       </defs>
                     </svg>
@@ -226,9 +308,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {profile.values?.slice(0, 4).map((v: string, i: number) => (
-                    <span key={i} className="text-xs glass rounded-full px-3 py-1 text-accent">
-                      {v}
-                    </span>
+                    <span key={i} className="text-xs glass rounded-full px-3 py-1 text-amber font-ui">{v}</span>
                   ))}
                 </div>
               </div>
@@ -241,70 +321,95 @@ export default function DashboardPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4, ease: premium }}
               className="space-y-4"
             >
-              {/* Oracolo di Oggi */}
               {dailyInsight && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="glass rounded-2xl p-6 glow border border-accent/10"
+                  transition={{ duration: 0.5, ease: premium }}
+                  className="glass rounded-2xl p-6 glow border border-amber/10 dimensional"
                 >
-                  <div className="text-xs text-accent mb-3 font-medium">✦ L&apos;ORACOLO DI OGGI</div>
-                  <p className="text-text-primary leading-relaxed italic text-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs text-amber font-ui tracking-wider">&#9670; L&apos;ORACOLO DI OGGI</div>
+                    <div className="text-[10px] text-text-muted font-ui">
+                      {new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long" })}
+                    </div>
+                  </div>
+                  <p className="text-text-primary leading-relaxed italic text-lg font-body">
                     &ldquo;{dailyInsight}&rdquo;
                   </p>
                 </motion.div>
               )}
 
-              {/* Tre Visioni */}
+              {/* Streak card — only when streak exists */}
+              {streak > 0 && (
+                <div className="glass rounded-2xl p-5 flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(streak, 7) }).map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-3 h-3 rounded-full bg-amber"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: i * 0.05, type: "spring" }}
+                      />
+                    ))}
+                    {streak > 7 && <span className="text-amber text-xs font-ui ml-1">+{streak - 7}</span>}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-amber font-ui tracking-wider">{streak} GIORNI CONSECUTIVI</div>
+                    <div className="text-[10px] text-text-muted font-ui">
+                      {streak >= 30 ? "Sei un Oracolo della costanza" : streak >= 7 ? "La tua connessione cosmica si rafforza" : "Continua cos\u00ec, le stelle ti osservano"}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Link href="/visions">
-                <FeatureCard
-                  gradient="from-purple-500/10 to-pink-500/10"
-                  borderColor="border-purple-500/15"
-                  icon="🔮"
-                  title="Tre Visioni"
-                  subtitle="Il tuo futuro, triplicato"
-                  description="Fuoco, Acqua, Stella — tre destini costruiti sul tuo cielo"
-                  tag="GENERATORE DESTINO"
-                  tagColor="text-purple-400"
-                />
+                <motion.div whileTap={{ scale: 0.98 }} className="rounded-2xl p-6 border border-verdigris/15 bg-gradient-to-br from-verdigris/8 to-amber/3 hover:glow transition-all duration-500 cursor-pointer group dimensional">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="text-3xl text-verdigris">&#9672;</div>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-verdigris/60 font-ui">GENERATORE DESTINO</span>
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">Tre Visioni</h3>
+                  <p className="text-sm text-text-secondary font-ui mb-2">Il tuo futuro, triplicato</p>
+                  <p className="text-xs text-text-muted font-body">Fuoco, Acqua, Stella — tre destini costruiti sul tuo cielo</p>
+                  <div className="mt-4 flex items-center gap-1 text-xs text-verdigris opacity-0 group-hover:opacity-100 transition-opacity font-ui">Genera &#8594;</div>
+                </motion.div>
               </Link>
 
-              {/* Rituale Cosmico */}
               <Link href="/ritual">
-                <FeatureCard
-                  gradient="from-blue-500/8 to-cyan-500/8"
-                  borderColor="border-blue-500/10"
-                  icon="🌙"
-                  title="Rituale Cosmico"
-                  subtitle="Check-in giornaliero"
-                  description="Mood, energia, allineamento — l'AI ti legge i pattern nascosti"
-                  tag="OGNI GIORNO"
-                  tagColor="text-blue-400"
-                />
+                <motion.div whileTap={{ scale: 0.98 }} className="rounded-2xl p-6 border border-amber/10 bg-gradient-to-br from-amber/5 to-sienna/3 hover:glow transition-all duration-500 cursor-pointer group dimensional">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="text-3xl text-amber">&#9790;</div>
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-amber/60 font-ui">OGNI GIORNO</span>
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">Rituale Cosmico</h3>
+                  <p className="text-sm text-text-secondary font-ui mb-2">Check-in giornaliero</p>
+                  <p className="text-xs text-text-muted font-body">Mood, energia, allineamento — l&apos;AI ti legge i pattern nascosti</p>
+                  <div className="mt-4 flex items-center gap-1 text-xs text-amber opacity-0 group-hover:opacity-100 transition-opacity font-ui">Inizia &#8594;</div>
+                </motion.div>
               </Link>
 
-              {/* Strengths + Shadows quick view */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="glass rounded-2xl p-5 border border-border">
-                  <div className="text-xs text-amber-400 mb-3">DONI COSMICI</div>
+                <div className="glass rounded-2xl p-5 dimensional">
+                  <div className="text-xs text-amber mb-3 font-ui tracking-wider">DONI COSMICI</div>
                   <div className="space-y-2">
                     {profile.strengths?.slice(0, 3).map((s: string, i: number) => (
-                      <div key={i} className="text-sm text-text-secondary flex items-start gap-2">
-                        <span className="text-amber-400 shrink-0">✦</span>
-                        <span>{s}</span>
+                      <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
+                        <span className="text-amber shrink-0">&#9670;</span><span>{s}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="glass rounded-2xl p-5 border border-border">
-                  <div className="text-xs text-red-400 mb-3">PUNTI CIECHI</div>
+                <div className="glass rounded-2xl p-5 dimensional">
+                  <div className="text-xs text-sienna mb-3 font-ui tracking-wider">PUNTI CIECHI</div>
                   <div className="space-y-2">
                     {profile.blindSpots?.slice(0, 3).map((b: string, i: number) => (
-                      <div key={i} className="text-sm text-text-secondary flex items-start gap-2">
-                        <span className="text-red-400 shrink-0">⊘</span>
-                        <span>{b}</span>
+                      <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
+                        <span className="text-sienna shrink-0">&#9676;</span><span>{b}</span>
                       </div>
                     ))}
                   </div>
@@ -315,49 +420,5 @@ export default function DashboardPage() {
         </AnimatePresence>
       </div>
     </div>
-  );
-}
-
-function FeatureCard({
-  gradient,
-  borderColor,
-  icon,
-  title,
-  subtitle,
-  description,
-  tag,
-  tagColor,
-}: {
-  gradient: string;
-  borderColor: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  tag: string;
-  tagColor: string;
-}) {
-  return (
-    <motion.div
-      whileTap={{ scale: 0.98 }}
-      className={`rounded-2xl p-6 border ${borderColor} bg-gradient-to-br ${gradient}
-        hover:glow transition-all duration-500 cursor-pointer group`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="text-3xl">{icon}</div>
-        <span className={`text-[10px] font-bold tracking-wider ${tagColor} opacity-60`}>
-          {tag}
-        </span>
-      </div>
-      <h3 className="text-xl font-bold mb-1 group-hover:text-gradient-cosmic transition-all">
-        {title}
-      </h3>
-      <p className="text-sm text-text-secondary mb-2">{subtitle}</p>
-      <p className="text-xs text-text-muted leading-relaxed">{description}</p>
-      <div className="mt-4 flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-        <span>Esplora</span>
-        <span>→</span>
-      </div>
-    </motion.div>
   );
 }

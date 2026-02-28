@@ -7,17 +7,14 @@ import { signOut } from "next-auth/react";
 
 export default function SettingsPage() {
   return (
-    <div className="max-w-2xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-3xl font-bold mb-8">Impostazioni</h1>
+    <div className="max-w-2xl mx-auto p-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-3xl font-bold font-display mb-8 text-gradient">Il Tuo Cielo</h1>
 
         <div className="space-y-4">
           <Card variant="glass">
-            <h3 className="font-semibold mb-2">Account</h3>
-            <p className="text-text-muted text-sm mb-4">
+            <h3 className="font-semibold font-display mb-2">Account</h3>
+            <p className="text-text-muted text-sm font-body mb-4">
               Gestisci il tuo account e i dati personali.
             </p>
             <Button
@@ -30,20 +27,20 @@ export default function SettingsPage() {
           </Card>
 
           <Card variant="glass">
-            <h3 className="font-semibold mb-2">Dati</h3>
-            <p className="text-text-muted text-sm">
-              I tuoi dati sono criptati e sicuri. Non condividiamo nulla con terze parti.
+            <h3 className="font-semibold font-display mb-2">Privacy</h3>
+            <p className="text-text-muted text-sm font-body">
+              I tuoi dati sono criptati e sicuri. Non condividiamo nulla con terze parti. Mai.
             </p>
           </Card>
 
           <Card variant="glass">
-            <h3 className="font-semibold mb-2">Piano</h3>
+            <h3 className="font-semibold font-display mb-2">Piano</h3>
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-lg bg-accent/10 text-accent text-sm border border-accent/20">
+              <span className="px-3 py-1 rounded-lg bg-amber/10 text-amber text-sm border border-amber/20 font-ui">
                 Free
               </span>
-              <span className="text-text-muted text-sm">
-                Funzionalità complete durante la beta
+              <span className="text-text-muted text-sm font-body">
+                Accesso completo durante la beta
               </span>
             </div>
           </Card>

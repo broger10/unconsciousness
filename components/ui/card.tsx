@@ -16,9 +16,9 @@ export function Card({
       className={cn(
         "rounded-2xl p-6 transition-all duration-300",
         {
-          default: "bg-bg-secondary border border-border",
+          default: "bg-bg-surface border border-border",
           glass: "glass",
-          glow: "bg-bg-secondary border border-border glow",
+          glow: "bg-bg-surface border border-border glow",
         }[variant],
         className
       )}
