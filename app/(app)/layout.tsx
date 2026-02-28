@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/dashboard", icon: "&#9670;", label: "Specchio" },
-  { href: "/visions", icon: "&#9672;", label: "Visioni" },
-  { href: "/ritual", icon: "&#9790;", label: "Rituale" },
-  { href: "/settings", icon: "&#9881;", label: "Cielo" },
+const tabs = [
+  { href: "/oggi", icon: "&#9670;", label: "Oggi" },
+  { href: "/mappa", icon: "&#9672;", label: "Mappa" },
+  { href: "/chiedi", icon: "&#10038;", label: "Chiedi", center: true },
+  { href: "/diario", icon: "&#9790;", label: "Diario" },
+  { href: "/profilo", icon: "&#9681;", label: "Profilo" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -19,51 +20,54 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-20 border-r border-border glass fixed h-full z-40">
-        <div className="p-4 flex flex-col items-center">
-          <Link href="/dashboard" className="text-xl text-amber mb-8 mt-2 ember-pulse">
-            &#9670;
-          </Link>
-          <nav className="flex flex-col gap-4">
-            {navItems.map((item) => (
+    <div className="min-h-screen">
+      <main className="pb-24">{children}</main>
+
+      {/* Bottom Tab Bar — mobile first, always visible */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50">
+        <div className="flex items-end justify-around px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+          {tabs.map((tab) => {
+            const active = pathname === tab.href || (tab.href !== "/oggi" && pathname.startsWith(tab.href));
+            const isCenter = tab.center;
+
+            return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={tab.href}
+                href={tab.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-3 rounded-xl transition-all text-center",
-                  pathname === item.href
-                    ? "bg-amber/10 text-amber"
-                    : "text-text-muted hover:text-text-secondary hover:bg-bg-glass"
+                  "flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-300 relative",
+                  active ? "text-amber" : "text-text-muted hover:text-text-secondary",
+                  isCenter && "relative -top-3"
                 )}
               >
-                <span className="text-xl" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                <span className="text-[10px] font-ui">{item.label}</span>
+                {isCenter ? (
+                  <span
+                    className={cn(
+                      "w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 dimensional",
+                      active
+                        ? "bg-amber text-bg-base"
+                        : "bg-bg-card border border-border text-amber"
+                    )}
+                    dangerouslySetInnerHTML={{ __html: tab.icon }}
+                  />
+                ) : (
+                  <span
+                    className={cn("text-xl transition-all", active && "scale-110")}
+                    dangerouslySetInnerHTML={{ __html: tab.icon }}
+                  />
+                )}
+                <span className={cn(
+                  "text-[10px] font-ui tracking-wide",
+                  isCenter && "mt-0.5"
+                )}>
+                  {tab.label}
+                </span>
+                {active && !isCenter && (
+                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber" />
+                )}
               </Link>
-            ))}
-          </nav>
-        </div>
-      </aside>
-
-      <main className="flex-1 md:ml-20 pb-24 md:pb-0">{children}</main>
-
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass z-50 border-t border-border">
-        <div className="flex items-center justify-around py-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all",
-                pathname === item.href ? "text-amber" : "text-text-muted"
-              )}
-            >
-              <span className="text-xl" dangerouslySetInnerHTML={{ __html: item.icon }} />
-              <span className="text-[10px] font-ui">{item.label}</span>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </nav>
     </div>

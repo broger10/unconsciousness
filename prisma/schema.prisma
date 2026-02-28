@@ -15,6 +15,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
+  subscription  Subscription?
   onboardingResponses OnboardingResponse[]
   visions       Vision[]
   checkins      DailyCheckin[]
@@ -22,6 +23,22 @@ model User {
   journals      Journal[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String   @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+  status               String   @default("free") // "free", "active", "canceled", "past_due"
+  plan                 String   @default("free") // "free", "monthly", "yearly"
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model Account {
@@ -139,15 +156,16 @@ model DailyCheckin {
 }
 
 model Insight {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // "transit", "shadow", "pattern", "growth", "prediction"
-  title     String
-  content   String   @db.Text
-  source    String?  // "natal", "transit", "checkin", "journal"
-  urgency   Int      @default(0) // 0-10, how cosmically significant
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "transit", "shadow", "pattern", "growth", "prediction", "chat", "daily"
+  title       String
+  content     String   @db.Text
+  userMessage String?  @db.Text  // User's question (for chat type)
+  source      String?  // "natal", "transit", "checkin", "journal", "chat"
+  urgency     Int      @default(0) // 0-10, how cosmically significant
+  createdAt   DateTime @default(now())
 }
 
 model Journal {
