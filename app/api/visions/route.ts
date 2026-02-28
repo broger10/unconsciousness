@@ -79,14 +79,11 @@ export async function GET() {
   });
 
   // Group by sessionId
-  const grouped = visions.reduce(
-    (acc, v) => {
-      if (!acc[v.sessionId]) acc[v.sessionId] = [];
-      acc[v.sessionId].push(v);
-      return acc;
-    },
-    {} as Record<string, typeof visions>
-  );
+  const grouped: Record<string, typeof visions> = {};
+  for (const v of visions) {
+    if (!grouped[v.sessionId]) grouped[v.sessionId] = [];
+    grouped[v.sessionId].push(v);
+  }
 
   return NextResponse.json({ sessions: grouped });
 }
