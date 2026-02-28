@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   // If we have 10 responses, generate the profile
   if (allResponses.length >= 10) {
     const profileData = await generateProfile(
-      allResponses.map((r) => ({ question: r.question, answer: r.answer }))
+      allResponses.map((r: { question: string; answer: string }) => ({ question: r.question, answer: r.answer }))
     );
 
     await db.profile.upsert({
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   // Generate next question
   const question = await generateOnboardingQuestion(
-    allResponses.map((r) => ({ question: r.question, answer: r.answer })),
+    allResponses.map((r: { question: string; answer: string }) => ({ question: r.question, answer: r.answer })),
     allResponses.length
   );
 
