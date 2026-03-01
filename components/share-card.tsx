@@ -133,11 +133,11 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
             style={{
               fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 22,
-              color: "rgba(201,168,76,0.3)",
               letterSpacing: "0.2em",
             }}
           >
-            unconsciousness
+            <span style={{ color: "rgba(74,155,142,0.3)" }}>un</span>
+            <span style={{ color: "rgba(201,168,76,0.3)" }}>consciousness</span>
           </p>
         </div>
       </div>
@@ -327,11 +327,11 @@ export const CompatShareCard = forwardRef<HTMLDivElement, CompatCardProps>(
             style={{
               fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 22,
-              color: "rgba(201,168,76,0.3)",
               letterSpacing: "0.2em",
             }}
           >
-            unconsciousness
+            <span style={{ color: "rgba(74,155,142,0.3)" }}>un</span>
+            <span style={{ color: "rgba(201,168,76,0.3)" }}>consciousness</span>
           </p>
         </div>
       </div>
@@ -484,11 +484,11 @@ export const TransitShareCard = forwardRef<HTMLDivElement, TransitCardProps>(
             style={{
               fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 22,
-              color: "rgba(201,168,76,0.3)",
               letterSpacing: "0.2em",
             }}
           >
-            unconsciousness
+            <span style={{ color: "rgba(74,155,142,0.3)" }}>un</span>
+            <span style={{ color: "rgba(201,168,76,0.3)" }}>consciousness</span>
           </p>
         </div>
       </div>

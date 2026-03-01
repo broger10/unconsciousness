@@ -300,8 +300,8 @@ export default function OggiPage() {
 
         {/* Bottom: branding + scroll hint */}
         <div className="absolute bottom-8 left-0 right-0 text-center z-10">
-          <p className="text-[10px] text-amber/25 font-display tracking-[0.2em] mb-3">
-            unconsciousness
+          <p className="text-[10px] font-display tracking-[0.2em] mb-3">
+            <span className="text-verdigris/25">un</span><span className="text-amber/25">consciousness</span>
           </p>
           <p className="text-text-muted text-xs font-ui scroll-hint">
             Scorri per il tuo cielo ↓
