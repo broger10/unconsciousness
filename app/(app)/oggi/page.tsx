@@ -156,15 +156,21 @@ export default function OggiPage() {
 
   return (
     <div className="min-h-screen relative oggi-snap">
-      {/* Card 1 — Hero: Frase Tagliente */}
+      {/* Card 1 — Hero: Frase Tagliente (postable) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ ease: premium }}
-        className="oggi-card min-h-screen flex flex-col items-center justify-center px-6 py-12 relative"
+        className="oggi-card min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden"
       >
-        {/* Top: name + date + signs */}
-        <div className="absolute top-6 left-0 right-0 px-6">
+        {/* Star field */}
+        <div className="absolute inset-0 stars-bg opacity-50" />
+
+        {/* Ambient glow behind phrase */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] rounded-full blur-[100px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)" }} />
+
+        {/* Top: name + date + badges */}
+        <div className="absolute top-6 left-0 right-0 px-6 z-10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-bold font-display">
@@ -187,35 +193,58 @@ export default function OggiPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-1.5 text-[10px] text-text-muted font-ui">
-            <span>&#9788; {profile.sunSign}</span>
-            <span className="text-border-light">&#183;</span>
-            <span>&#9790; {profile.moonSign}</span>
-            <span className="text-border-light">&#183;</span>
-            <span>&#8593; {profile.risingSign}</span>
-          </div>
         </div>
 
-        {/* Center: the cutting phrase */}
-        <div className="max-w-lg text-center px-2">
-          {frase ? (
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8, ease: premium }}
-              className="text-display text-amber italic leading-tight"
-            >
-              {frase}
-            </motion.p>
-          ) : (
-            <div className="text-display text-amber/20 italic">
-              <span className="filo-shimmer inline-block w-full h-12 rounded-lg" />
+        {/* Center content — the postable zone */}
+        <div className="relative z-10 text-center w-full max-w-lg">
+          {/* Signs trio */}
+          <div className="flex items-center justify-center gap-5 mb-10">
+            <div className="text-center">
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">☉</span>
+              <span className="text-[13px] font-display text-amber font-semibold">{profile.sunSign}</span>
             </div>
-          )}
+            <span className="text-amber/25 text-[8px]">✦</span>
+            <div className="text-center">
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">☽</span>
+              <span className="text-[13px] font-display text-amber font-semibold">{profile.moonSign}</span>
+            </div>
+            <span className="text-amber/25 text-[8px]">✦</span>
+            <div className="text-center">
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">↑</span>
+              <span className="text-[13px] font-display text-amber font-semibold">{profile.risingSign}</span>
+            </div>
+          </div>
+
+          {/* Upper ornament */}
+          <div className="text-amber/30 text-sm mb-8 ember-pulse">✦</div>
+
+          {/* The phrase */}
+          <div className="px-2">
+            {frase ? (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.8, ease: premium }}
+                className="text-display text-amber italic leading-tight"
+              >
+                {frase}
+              </motion.p>
+            ) : (
+              <div className="text-display text-amber/20 italic">
+                <span className="filo-shimmer inline-block w-full h-12 rounded-lg" />
+              </div>
+            )}
+          </div>
+
+          {/* Lower ornament */}
+          <div className="text-amber/30 text-sm mt-8 ember-pulse">✦</div>
         </div>
 
-        {/* Bottom: scroll hint */}
-        <div className="absolute bottom-8 left-0 right-0 text-center">
+        {/* Bottom: branding + scroll hint */}
+        <div className="absolute bottom-8 left-0 right-0 text-center z-10">
+          <p className="text-[10px] text-amber/25 font-display tracking-[0.2em] mb-3">
+            unconsciousness
+          </p>
           <p className="text-text-muted text-xs font-ui scroll-hint">
             Scorri per il tuo cielo ↓
           </p>
