@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MarkdownText } from "@/components/markdown-text";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -247,7 +248,7 @@ export default function DiarioPage() {
                                 onClick={() => setExpandedReflection(isExpanded ? null : j.id)}
                                 className="text-[10px] text-verdigris font-ui tracking-wide mt-2 mb-1"
                               >
-                                {isExpanded ? "&#9670; Chiudi riflessione" : "&#9670; Riflessione cosmica"}
+                                {isExpanded ? "◆ Chiudi riflessione" : "◆ Riflessione cosmica"}
                               </button>
                               <AnimatePresence>
                                 {isExpanded && (
@@ -259,9 +260,10 @@ export default function DiarioPage() {
                                     className="overflow-hidden"
                                   >
                                     <div className="pt-2 pl-5 border-l border-verdigris/20 ml-1">
-                                      <p className="text-sm text-text-secondary font-body italic leading-relaxed">
-                                        {j.aiReflection}
-                                      </p>
+                                      <MarkdownText
+                                        content={j.aiReflection}
+                                        className="text-sm text-text-secondary font-body italic leading-relaxed"
+                                      />
                                     </div>
                                   </motion.div>
                                 )}

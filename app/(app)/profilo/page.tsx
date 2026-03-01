@@ -54,6 +54,7 @@ export default function ProfiloPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ checkins: 0, journals: 0 });
   const [sub, setSub] = useState<SubData | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
@@ -62,8 +63,9 @@ export default function ProfiloPage() {
       fetch("/api/checkin").then((r) => r.json()).catch(() => ({ checkins: [], streak: 0 })),
       fetch("/api/journal").then((r) => r.json()).catch(() => ({ journals: [] })),
       fetch("/api/stripe/status").then((r) => r.json()).catch(() => null),
+      fetch("/api/credits").then((r) => r.json()).catch(() => null),
     ])
-      .then(([profileData, checkinData, journalData, subData]) => {
+      .then(([profileData, checkinData, journalData, subData, creditsData]) => {
         if (profileData.profile) setProfile(profileData.profile);
         if (profileData.user) setUser(profileData.user);
         setStats({
@@ -71,6 +73,7 @@ export default function ProfiloPage() {
           journals: journalData.journals?.length || 0,
         });
         if (subData) setSub(subData);
+        if (creditsData?.credits !== undefined) setCredits(creditsData.credits);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -197,8 +200,14 @@ export default function ProfiloPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, ease: premium }}
-          className="grid grid-cols-3 gap-3 mb-5"
+          className="grid grid-cols-4 gap-3 mb-5"
         >
+          <div className="glass rounded-xl p-4 text-center dimensional">
+            <div className="text-2xl font-bold font-display text-amber">
+              {credits === -1 ? "∞" : credits ?? "—"}
+            </div>
+            <div className="text-[10px] text-text-muted font-ui tracking-wide mt-1">CREDITI</div>
+          </div>
           <div className="glass rounded-xl p-4 text-center dimensional">
             <div className="text-2xl font-bold font-display text-amber">{stats.checkins}</div>
             <div className="text-[10px] text-text-muted font-ui tracking-wide mt-1">CHECK-IN</div>

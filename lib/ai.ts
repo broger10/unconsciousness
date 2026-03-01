@@ -299,7 +299,8 @@ L'insight deve:
 - Connettere i transiti di OGGI con il tema natale della persona
 - Rivelare un pattern che la persona non ha ancora visto
 - Essere radicalmente specifico (no Barnum effect)
-- Suonare come una profezia sussurrata, non come un oroscopo da giornale`,
+- Suonare come una profezia sussurrata, non come un oroscopo da giornale
+- Massimo 150 parole. Niente introduzioni generiche. Inizia direttamente con l'insight più potente.`,
     messages: [
       {
         role: "user",
@@ -492,5 +493,153 @@ Rifletti ciò che è nascosto.`,
     ],
   });
 
+  return (message.content[0] as { type: "text"; text: string }).text;
+}
+
+// ============================================
+// COSMIC COMPATIBILITY — Two Souls Dancing
+// ============================================
+
+export async function generateCompatibility(
+  person1: {
+    name?: string;
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    venusSign?: string;
+    marsSign?: string;
+    chironSign?: string;
+    natalChartData?: Record<string, unknown>;
+  },
+  person2: {
+    name?: string;
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    venusSign?: string;
+    marsSign?: string;
+    chironSign?: string;
+    natalChartData?: Record<string, unknown>;
+  }
+) {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2000,
+    system: `Sei un astrologo junghiano italiano. Analizza la compatibilità tra due persone basandoti sui loro temi natali completi. NON dare voti o percentuali. Analizza: 1) La danza di Venere e Marte tra i due temi 2) Come le Lune interagiscono emotivamente 3) La ferita di Chirone di uno come medicina per l'altro 4) Il pattern nascosto della relazione — cosa si attrae inconsciamente 5) La sfida evolutiva di questa connessione. Tono: profondo, poetico, senza giudizi. Massimo 400 parole.
+
+Rispondi con un JSON valido:
+{
+  "analysis": "Il testo completo dell'analisi della compatibilità",
+  "highlightQuote": "La frase più potente dell'analisi, massimo 2 righe, perfetta per essere condivisa"
+}`,
+    messages: [
+      {
+        role: "user",
+        content: `PERSONA 1${person1.name ? ` (${person1.name})` : ""}:
+Sole: ${person1.sunSign || "?"}, Luna: ${person1.moonSign || "?"}, Ascendente: ${person1.risingSign || "?"}
+Venere: ${person1.venusSign || "?"}, Marte: ${person1.marsSign || "?"}, Chirone: ${person1.chironSign || "?"}
+${person1.natalChartData ? `Dati completi: ${JSON.stringify(person1.natalChartData)}` : ""}
+
+PERSONA 2${person2.name ? ` (${person2.name})` : ""}:
+Sole: ${person2.sunSign || "?"}, Luna: ${person2.moonSign || "?"}, Ascendente: ${person2.risingSign || "?"}
+Venere: ${person2.venusSign || "?"}, Marte: ${person2.marsSign || "?"}, Chirone: ${person2.chironSign || "?"}
+${person2.natalChartData ? `Dati completi: ${JSON.stringify(person2.natalChartData)}` : ""}
+
+Analizza la compatibilità cosmica tra queste due anime.`,
+      },
+    ],
+  });
+
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { analysis: text, highlightQuote: text.substring(0, 120) };
+  }
+  return JSON.parse(jsonMatch[0]);
+}
+
+// ============================================
+// TRANSITS — Real-time Sky Analysis
+// ============================================
+
+export async function generateTransitInsight(
+  transitDescription: string,
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+  }
+) {
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 150,
+    system: `Sei un astrologo italiano. Scrivi UNA riga di interpretazione per il transito dato, personalizzata per il tema natale. Massimo 15 parole. Tono poetico, diretto.`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
+Transito: ${transitDescription}
+Interpreta in una riga.`,
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text;
+}
+
+// ============================================
+// LUNAR RITUALS — New & Full Moon
+// ============================================
+
+export async function generateLunarRitualMessage(
+  phase: "new_moon" | "full_moon",
+  lunarSign: string,
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+  }
+) {
+  const phaseLabel = phase === "new_moon" ? "Luna Nuova" : "Luna Piena";
+  const prompt = phase === "new_moon"
+    ? `${phaseLabel} in ${lunarSign}. Cosa deve seminare e quale intenzione settare questa persona, basandoti sul suo tema natale.`
+    : `${phaseLabel} in ${lunarSign}. Cosa deve rilasciare e cosa ha completato il suo ciclo per questa persona, basandoti sul suo tema natale.`;
+
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    system: `Sei un astrologo mistico italiano. Scrivi un messaggio per un ritual lunare. 3-4 frasi, poetiche e personali. In italiano. Niente emoji.`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+${prompt}`,
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text;
+}
+
+// ============================================
+// MORNING PUSH — Daily Notification Message
+// ============================================
+
+export async function generateMorningPushMessage(profile: {
+  sunSign?: string;
+  moonSign?: string;
+  risingSign?: string;
+}) {
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 100,
+    system: `Sei un astrologo mistico italiano. In 2 righe massimo, scrivi un messaggio personalizzato per ${profile.sunSign || "questo segno"} con luna in ${profile.moonSign || "questo segno"} e ascendente ${profile.risingSign || "questo segno"}. Tono poetico, profondo, non generico. Niente emoji.`,
+    messages: [
+      {
+        role: "user",
+        content: "Genera il messaggio mattutino per oggi.",
+      },
+    ],
+  });
   return (message.content[0] as { type: "text"; text: string }).text;
 }

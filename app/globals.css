@@ -1,6 +1,12 @@
+/* Fonts loaded at runtime — must precede tailwindcss per CSS spec */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Syne:wght@400;500;600;700;800&family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&display=swap");
+
 @import "tailwindcss";
 
 :root {
+  --font-fraunces: "Fraunces", Georgia, serif;
+  --font-syne: "Syne", system-ui, sans-serif;
+  --font-cormorant: "Cormorant Infant", Georgia, serif;
   /* Alchemical palette — dark forest green + raw amber + verdigris */
   --bg-base: #0D1710;
   --bg-surface: #141F16;
