@@ -12,7 +12,7 @@ const sizes = {
 export function UnLogo({ size = "md", className = "" }: UnLogoProps) {
   return (
     <span className={`font-bold font-display ${sizes[size]} ${className}`}>
-      <span className="text-amber">un</span>
+      <span className="text-verdigris">un</span>
       <span className="text-gradient">consciousness</span>
     </span>
   );
