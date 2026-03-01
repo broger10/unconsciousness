@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MarkdownText } from "@/components/markdown-text";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -338,7 +339,7 @@ export default function CompatibilitaPage() {
               {result.highlightQuote && (
                 <div className="glass rounded-xl p-4 mb-5 border border-amber/10">
                   <p className="text-amber font-body italic text-center text-sm leading-relaxed">
-                    &ldquo;{result.highlightQuote}&rdquo;
+                    &ldquo;{decodeHtmlEntities(result.highlightQuote)}&rdquo;
                   </p>
                 </div>
               )}
@@ -406,7 +407,7 @@ export default function CompatibilitaPage() {
                       </div>
                       {item.highlightQuote && (
                         <p className="text-xs text-text-secondary font-body italic">
-                          &ldquo;{item.highlightQuote}&rdquo;
+                          &ldquo;{decodeHtmlEntities(item.highlightQuote)}&rdquo;
                         </p>
                       )}
                     </div>

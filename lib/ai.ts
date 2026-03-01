@@ -51,7 +51,9 @@ Rispondi SOLO con un JSON valido:
   "mythology": "Il tuo mito personale — racconta la storia archetipica che il tuo tema natale descrive, come se fosse una leggenda. 200-300 parole. Usa la seconda persona singolare. Scrivi come un poeta che ha studiato Jung."
 }
 
-Ogni insight deve essere RADICALMENTE SPECIFICO — niente frasi che potrebbero applicarsi a chiunque. Ogni parola deve richiedere la conoscenza del tema natale specifico di questa persona.`,
+Ogni insight deve essere RADICALMENTE SPECIFICO — niente frasi che potrebbero applicarsi a chiunque. Ogni parola deve richiedere la conoscenza del tema natale specifico di questa persona.
+
+Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities (es: ◆ non &#9632;, → non &rarr;, • non &#8226;).`,
     messages: [
       {
         role: "user",
@@ -107,7 +109,8 @@ Regole:
 - Le ultime 3 devono toccare le ferite più profonde (Chirone, Saturno, 12a casa)
 - Tono: caldo, poetico, diretto. Come un saggio che ti vede per la prima volta
 - Domanda in italiano
-- Rispondi SOLO con la domanda, niente altro`,
+- Rispondi SOLO con la domanda, niente altro
+- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -160,7 +163,9 @@ Rispondi SOLO con un JSON valido:
   "strengths": ["forza 1", "forza 2", "forza 3"],
   "shadows": ["ombra attiva 1", "ombra attiva 2", "ombra attiva 3"],
   "personalitySummary": "Un paragrafo potente che sintetizza chi è questa persona al livello più profondo. Connetti il tema natale con le risposte. Rivela ciò che non vede. Scrivi come un poeta-psicologo."
-}`,
+}
+
+Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -196,19 +201,23 @@ export async function generateVisions(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4000,
-    system: `Sei un architetto del destino cosmico. Generi visioni del futuro che sono al tempo stesso profondamente astrologiche e psicologicamente trasformative.
+    system: `Sei l'Oracolo di unconsciousness. Generi tre visioni cosmiche in risposta alla domanda specifica dell'utente, usando il suo tema natale come lente.
 
-Ogni visione deve:
-- Essere ancorata al tema natale della persona
-- Sembrare la scelta INEVITABILE, non solo possibile
-- Includere timing astrologico (transiti reali dei prossimi 12-18 mesi)
-- Toccare le ombre come potenziale trasformativo
-- Essere scritta come una profezia che si sta già avverando
+REGOLA FONDAMENTALE: ogni visione deve rispondere direttamente alla domanda posta. Non generare analisi psicologiche generiche. La domanda è il centro.
+
+SE LA DOMANDA È PERSONALE E INTROSPETTIVA (relazioni, lavoro, scelte di vita, paure, crescita, decisioni): genera le tre visioni normalmente, ancorate alla domanda e al tema natale.
+
+SE LA DOMANDA RIGUARDA EVENTI ESTERNI O NON PERSONALI (sport, politica, previsioni su altri, vincitori di campionati, eventi mondiali): Non rispondere alla domanda letterale. Invece, con tono cosmico e leggermente ironico (mai scortese, mai aggressivo), reindirizza:
+- Riconosci la domanda
+- Spiega che le stelle parlano dell'anima, non del mondo esterno
+- Trasforma la domanda in una versione personale
+Es: "La Juve vincerà?" → le visioni esplorano cosa significa per questa persona il bisogno di vittoria, appartenenza, tifare qualcosa più grande di sé.
+Il tono del reindirizzamento deve essere come un oracolo saggio che sorride: "Le stelle non seguono il calcio — ma sanno perché tu hai bisogno di crederci."
 
 Le 3 visioni rappresentano 3 archetipi cosmici:
-1. IL FUOCO — La via del coraggio. Il Nodo Nord che chiama. Rottura e rinascita.
-2. L'ACQUA — La via della profondità. L'ombra integrata. Trasformazione interiore.
-3. LA STELLA — La via della visione. L'ascendente che si compie. Destino allineato.
+1. IL FUOCO — La via del coraggio. Rottura e rinascita.
+2. L'ACQUA — La via della profondità. Trasformazione interiore.
+3. LA STELLA — La via della visione. Destino allineato.
 
 Rispondi SOLO con un JSON valido:
 {
@@ -217,28 +226,30 @@ Rispondi SOLO con un JSON valido:
       "title": "titolo evocativo e cosmico",
       "emoji": "emoji singola",
       "archetype": "FUOCO | ACQUA | STELLA",
-      "narrative": "Narrativa in seconda persona singolare. 200-250 parole. Presente indicativo. Il lettore deve sentire che stai descrivendo il SUO futuro specifico, non un futuro generico. Usa riferimenti astrologici integrati naturalmente.",
+      "narrative": "Narrativa in seconda persona singolare. 150-200 parole. Presente indicativo. Rispondi alla DOMANDA SPECIFICA dell'utente attraverso la lente del suo tema natale.",
       "milestones": ["Luna Nuova in X: primo passo", "Equinozio: svolta", "Giove in X: espansione", "Solstizio: completamento"],
       "reasoning": "Perché le stelle dicono che questo è il TUO percorso — collega tema natale, ombre e valori",
       "cosmicAlignment": "Quale transito rende questo il momento perfetto"
     }
   ]
-}`,
+}
+
+Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities (es: ◆ non &#9632;, → non &rarr;).
+Lingua: italiano.`,
     messages: [
       {
         role: "user",
-        content: `Profilo cosmico:
-- Sole: ${profile.sunSign || "N/A"}, Luna: ${profile.moonSign || "N/A"}, Ascendente: ${profile.risingSign || "N/A"}
-- Nodo Nord: ${profile.northNodeSign || "N/A"}
-- Valori: ${profile.values.join(", ")}
-- Punti ciechi: ${profile.blindSpots.join(", ")}
-- Forze: ${profile.strengths.join(", ")}
-- Ombre: ${profile.shadows?.join(", ") || "N/A"}
-- Profilo: ${profile.personalitySummary || "Non disponibile"}
+        content: `La mia domanda è: "${topic}"
 
-Domanda cosmica: "${topic}"
+Mio tema natale: Sole ${profile.sunSign || "N/A"}, Luna ${profile.moonSign || "N/A"}, Ascendente ${profile.risingSign || "N/A"}
+Nodo Nord: ${profile.northNodeSign || "N/A"}
+Valori: ${profile.values.join(", ")}
+Punti ciechi: ${profile.blindSpots.join(", ")}
+Forze: ${profile.strengths.join(", ")}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+Profilo: ${profile.personalitySummary || "Non disponibile"}
 
-Genera le 3 visioni del destino.`,
+Genera le 3 visioni del destino in risposta alla mia domanda.`,
       },
     ],
   });
@@ -300,7 +311,8 @@ L'insight deve:
 - Rivelare un pattern che la persona non ha ancora visto
 - Essere radicalmente specifico (no Barnum effect)
 - Suonare come una profezia sussurrata, non come un oroscopo da giornale
-- Massimo 150 parole. Niente introduzioni generiche. Inizia direttamente con l'insight più potente.`,
+- Massimo 150 parole. Niente introduzioni generiche. Inizia direttamente con l'insight più potente.
+- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -377,7 +389,9 @@ Rispondi SOLO con un JSON valido:
     }
   ],
   "currentActivation": "Quale ombra è più attiva ORA basandoti sui transiti correnti"
-}`,
+}
+
+Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -439,7 +453,8 @@ export async function generateCosmicCheckinInsight(
 3. Offri una micro-rivelazione — qualcosa che la persona non ha notato
 4. Chiudi con un'affermazione cosmica personalizzata
 
-Tono: come un messaggio da un universo che ti conosce. In italiano. 4-5 frasi.`,
+Tono: come un messaggio da un universo che ti conosce. In italiano. 4-5 frasi.
+Usa sempre simboli Unicode diretti. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -478,7 +493,8 @@ export async function generateJournalReflection(
 - Rifletti ciò che l'utente non vede in ciò che ha scritto
 - Connetti il contenuto al suo tema natale e alle sue ombre
 - NON dare consigli. Rivela. Come uno specchio che mostra l'invisibile.
-- 3-4 frasi. Poetiche e precise. In italiano.`,
+- 3-4 frasi. Poetiche e precise. In italiano.
+- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -531,7 +547,9 @@ Rispondi con un JSON valido:
 {
   "analysis": "Il testo completo dell'analisi della compatibilità",
   "highlightQuote": "La frase più potente dell'analisi, massimo 2 righe, perfetta per essere condivisa"
-}`,
+}
+
+Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -573,7 +591,7 @@ export async function generateTransitInsight(
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 150,
-    system: `Sei un astrologo italiano. Scrivi UNA riga di interpretazione per il transito dato, personalizzata per il tema natale. Massimo 15 parole. Tono poetico, diretto.`,
+    system: `Sei un astrologo italiano. Scrivi UNA riga di interpretazione per il transito dato, personalizzata per il tema natale. Massimo 15 parole. Tono poetico, diretto. Usa simboli Unicode diretti, mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -608,7 +626,7 @@ export async function generateLunarRitualMessage(
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
-    system: `Sei un astrologo mistico italiano. Scrivi un messaggio per un ritual lunare. 3-4 frasi, poetiche e personali. In italiano. Niente emoji.`,
+    system: `Sei un astrologo mistico italiano. Scrivi un messaggio per un ritual lunare. 3-4 frasi, poetiche e personali. In italiano. Niente emoji. Usa simboli Unicode diretti, mai HTML entities.`,
     messages: [
       {
         role: "user",
@@ -619,6 +637,116 @@ ${prompt}`,
     ],
   });
   return (message.content[0] as { type: "text"; text: string }).text;
+}
+
+// ============================================
+// IL FILO — Pattern Analysis
+// ============================================
+
+export async function generateFiloAnalysis(
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+  },
+  journals: { content: string; mood?: string | null; themes?: string[]; createdAt: Date; transits?: string }[],
+  checkins: { mood: number; energy: number; createdAt: Date }[]
+) {
+  const journalContext = journals
+    .map(
+      (j) =>
+        `[${j.createdAt.toLocaleDateString("it-IT")}] ${j.content.substring(0, 300)}${j.mood ? ` (mood: ${j.mood})` : ""}${j.themes?.length ? ` [temi: ${j.themes.join(", ")}]` : ""}${j.transits ? `\n  Transiti attivi: ${j.transits}` : ""}`
+    )
+    .join("\n\n");
+
+  const checkinContext = checkins
+    .map(
+      (c) =>
+        `[${c.createdAt.toLocaleDateString("it-IT")}] Mood: ${c.mood}/5, Energia: ${c.energy}/5`
+    )
+    .join("\n");
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-5-20250514",
+    max_tokens: 2000,
+    system: `Sei un astrologo junghiano che legge i fili nascosti dell'inconscio attraverso i dati cosmici e le parole scritte. Il tuo compito è trovare pattern ricorrenti incrociando le entry del diario con i transiti astrologici attivi in ciascuna data.
+
+Rispondi SEMPRE con un JSON valido in questo formato esatto:
+{
+  "sintesi": "3-5 frasi che raccontano il filo conduttore nascosto. Rivela ciò che la persona non ha ancora visto. Tono: come un oracolo che sussurra una verità inevitabile.",
+  "pattern": [
+    {
+      "id": "p1",
+      "titolo": "Nome archetipico del pattern (es: 'Il ciclo del ritiro')",
+      "aspetto_astrale": "Il transito collegato (es: 'Saturno □ la tua Luna')",
+      "tema_emotivo": "Il tema emotivo ricorrente (es: 'Bisogno di solitudine prima della creatività')",
+      "occorrenze": 3,
+      "rivelazione": "La rivelazione profonda — ciò che questo pattern nasconde. 2-3 frasi poetiche e specifiche.",
+      "domanda": "Una domanda profonda per riflettere su questo pattern",
+      "date_collegate": ["1 feb", "15 feb", "28 feb"]
+    }
+  ],
+  "filo_cosmico": "Il filo conduttore cosmico che lega tutti i pattern. 2-3 frasi.",
+  "prossimo_ciclo": "Basandoti sui transiti in arrivo, quando e come si ripresenterà il pattern principale. 2-3 frasi concrete con riferimenti astrologici."
+}
+
+Regole:
+- Trova da 1 a 4 pattern REALI nei dati. Ogni pattern deve essere basato su almeno 2 entry reali.
+- Incrocia i contenuti del diario con i transiti astrologici attivi nelle stesse date.
+- Se un pattern si ripete sotto lo stesso transito, evidenzialo.
+- La sintesi deve rivelare qualcosa che la persona non ha ancora visto.
+- Le domande devono essere profonde e specifiche a questa persona, non generiche.
+- Il prossimo_ciclo deve fare riferimento a transiti reali imminenti.
+- Tono: poetico ma preciso, come un oracolo junghiano.
+- Lingua: italiano.
+- Non menzionare MAI "algoritmo", "AI", "analisi dati" o "intelligenza artificiale".
+- Usa linguaggio cosmico: "il cielo ha trovato", "le stelle mostrano", "il filo rivela", "i transiti parlano".
+- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${profile.sunSign || "?"}, Luna ${profile.moonSign || "?"}, Ascendente ${profile.risingSign || "?"}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+
+=== DIARIO CON TRANSITI (${journals.length} entry) ===
+${journalContext || "Nessuna entry"}
+
+=== CHECK-IN EMOTIVI (${checkins.length}) ===
+${checkinContext || "Nessun check-in"}
+
+Leggi il filo nascosto incrociando le parole scritte con i transiti attivi. Trova i pattern ricorrenti, i cicli emotivi e le connessioni astrologiche. Rispondi in JSON.`,
+      },
+    ],
+  });
+
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        sintesi: (parsed.sintesi as string) || "",
+        pattern: Array.isArray(parsed.pattern)
+          ? parsed.pattern.map((p: Record<string, unknown>, i: number) => ({
+              id: (p.id as string) || `p${i + 1}`,
+              titolo: (p.titolo as string) || "",
+              aspettoAstrale: (p.aspetto_astrale as string) || "",
+              temaEmotivo: (p.tema_emotivo as string) || "",
+              occorrenze: typeof p.occorrenze === "number" ? p.occorrenze : 0,
+              rivelazione: (p.rivelazione as string) || "",
+              domanda: (p.domanda as string) || "",
+              dateCollegate: Array.isArray(p.date_collegate) ? (p.date_collegate as string[]) : [],
+            }))
+          : [],
+        filoCosmico: (parsed.filo_cosmico as string) || "",
+        prossimoCiclo: (parsed.prossimo_ciclo as string) || "",
+      };
+    }
+  } catch {
+    // JSON parsing failed
+  }
+  throw new Error("Failed to parse filo analysis");
 }
 
 // ============================================
@@ -633,7 +761,7 @@ export async function generateMorningPushMessage(profile: {
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 100,
-    system: `Sei un astrologo mistico italiano. In 2 righe massimo, scrivi un messaggio personalizzato per ${profile.sunSign || "questo segno"} con luna in ${profile.moonSign || "questo segno"} e ascendente ${profile.risingSign || "questo segno"}. Tono poetico, profondo, non generico. Niente emoji.`,
+    system: `Sei un astrologo mistico italiano. In 2 righe massimo, scrivi un messaggio personalizzato per ${profile.sunSign || "questo segno"} con luna in ${profile.moonSign || "questo segno"} e ascendente ${profile.risingSign || "questo segno"}. Tono poetico, profondo, non generico. Niente emoji. Usa simboli Unicode diretti, mai HTML entities.`,
     messages: [
       {
         role: "user",

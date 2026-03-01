@@ -214,6 +214,8 @@ model Compatibility {
   analysis        String   @db.Text
   highlightQuote  String?  @db.Text  // Most powerful quote for sharing
   createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model LunarRitual {
@@ -227,6 +229,8 @@ model LunarRitual {
   completed   Boolean  @default(false)
   cycleDate   DateTime // The actual lunar event date
   createdAt   DateTime @default(now())
+
+  @@index([userId, cycleDate])
 }
 
 model PushSubscription {
@@ -236,4 +240,6 @@ model PushSubscription {
   subscription Json     // Web Push subscription object
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
+
+  @@index([userId])
 }

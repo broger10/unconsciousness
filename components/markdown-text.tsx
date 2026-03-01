@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 interface MarkdownTextProps {
   content: string;
@@ -8,6 +9,7 @@ interface MarkdownTextProps {
 }
 
 export function MarkdownText({ content, className = "" }: MarkdownTextProps) {
+  const decoded = decodeHtmlEntities(content);
   return (
     <div className={className}>
       <ReactMarkdown
@@ -57,7 +59,7 @@ export function MarkdownText({ content, className = "" }: MarkdownTextProps) {
           hr: () => <hr className="border-border/30 my-3" />,
         }}
       >
-        {content}
+        {decoded}
       </ReactMarkdown>
     </div>
   );

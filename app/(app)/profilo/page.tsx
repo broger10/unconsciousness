@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { signOut } from "next-auth/react";
+import { UnLogo } from "@/components/un-logo";
+import { SanctumWelcome } from "@/components/sanctum-welcome";
+import Link from "next/link";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -128,6 +131,9 @@ export default function ProfiloPage() {
 
   return (
     <div className="min-h-screen relative">
+      <Suspense fallback={null}>
+        <SanctumWelcome />
+      </Suspense>
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
         {/* Identity Card */}
         <motion.div
@@ -149,7 +155,14 @@ export default function ProfiloPage() {
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold font-display">{user?.name || "Viaggiatore"}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold font-display">{user?.name || "Viaggiatore"}</h1>
+                {sub?.isPremium && (
+                  <span className="oracle-badge text-[10px] font-ui text-amber px-2 py-0.5 rounded-full glass border border-amber/15">
+                    &#10038; Oracolo
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-xs text-text-muted font-ui">
                 {profile?.sunSign && <span>&#9788; {profile.sunSign}</span>}
                 {profile?.moonSign && (
@@ -289,7 +302,7 @@ export default function ProfiloPage() {
           }`}
         >
           <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">
-            {sub?.isPremium ? "&#9670; PREMIUM ATTIVO" : "IL TUO PIANO"}
+            {sub?.isPremium ? "&#10038; MEMBRO DEL SANCTUM" : "IL TUO PIANO"}
           </div>
 
           {sub?.isPremium ? (
@@ -297,7 +310,7 @@ export default function ProfiloPage() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-amber text-lg">&#10038;</span>
                 <span className="text-base font-bold font-display">
-                  Premium {sub.plan === "yearly" ? "Annuale" : "Mensile"}
+                  Oracolo del Sanctum
                 </span>
               </div>
               {sub.currentPeriodEnd && (
@@ -350,6 +363,52 @@ export default function ProfiloPage() {
             </div>
           )}
         </motion.div>
+
+        {/* Il Sanctum — premium exclusive features */}
+        {sub?.isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.19, ease: premium }}
+            className="glass rounded-2xl p-5 mb-5 dimensional border border-amber/10"
+          >
+            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">&#10038; IL SANCTUM</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/compatibilita"
+                className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
+              >
+                <span className="text-lg text-amber group-hover:scale-110 inline-block transition-transform">&#10038;</span>
+                <div className="text-sm font-display font-bold mt-1">Compatibilit&agrave;</div>
+                <div className="text-[10px] text-text-muted font-ui">Illimitata</div>
+              </Link>
+              <Link
+                href="/visions"
+                className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
+              >
+                <span className="text-lg text-verdigris group-hover:scale-110 inline-block transition-transform">&#9670;</span>
+                <div className="text-sm font-display font-bold mt-1">Visioni</div>
+                <div className="text-[10px] text-text-muted font-ui">Del Destino</div>
+              </Link>
+              <Link
+                href="/diario"
+                className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
+              >
+                <span className="text-lg text-sienna group-hover:scale-110 inline-block transition-transform">&#9790;</span>
+                <div className="text-sm font-display font-bold mt-1">Riflessioni</div>
+                <div className="text-[10px] text-text-muted font-ui">Cosmiche</div>
+              </Link>
+              <Link
+                href="/mappa"
+                className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
+              >
+                <span className="text-lg text-amber-glow group-hover:scale-110 inline-block transition-transform">&#9672;</span>
+                <div className="text-sm font-display font-bold mt-1">Mappa</div>
+                <div className="text-[10px] text-text-muted font-ui">Dell&apos;Ombra</div>
+              </Link>
+            </div>
+          </motion.div>
+        )}
 
         {/* Birth Data */}
         {profile?.birthDate && (
@@ -426,7 +485,7 @@ export default function ProfiloPage() {
 
         {/* Version */}
         <div className="text-center text-[10px] text-text-muted/50 font-ui pb-4">
-          <span className="text-amber">un</span>consciousness v1.0 &middot; il cosmo ti aspetta
+          <UnLogo size="sm" className="inline" /> v1.0 &middot; il cosmo ti aspetta
         </div>
       </div>
     </div>

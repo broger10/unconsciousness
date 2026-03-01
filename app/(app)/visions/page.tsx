@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { MarkdownText } from "@/components/markdown-text";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { Textarea } from "@/components/ui/textarea";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 interface Vision {
   title: string;
@@ -102,7 +103,7 @@ export default function VisionsPage() {
                           <div className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-1`}>
                             {v.archetype === "FUOCO" ? "&#9632; La Via del Fuoco" : v.archetype === "ACQUA" ? "&#9632; La Via dell'Acqua" : "&#9632; La Via della Stella"}
                           </div>
-                          <h3 className="text-xl font-bold font-display">{v.title}</h3>
+                          <h3 className="text-xl font-bold font-display">{decodeHtmlEntities(v.title)}</h3>
                           {!open && <p className="text-text-muted text-sm mt-2 font-ui">Tocca per esplorare &#8594;</p>}
                         </div>
                       </div>
@@ -120,18 +121,18 @@ export default function VisionsPage() {
                                 {v.milestones?.map((m: string, j: number) => (
                                   <div key={j} className="flex items-start gap-3 text-sm font-body">
                                     <div className={`w-2 h-2 rounded-full mt-1.5 ${c.text} bg-current shrink-0`} />
-                                    <span className="text-text-secondary">{m}</span>
+                                    <span className="text-text-secondary">{decodeHtmlEntities(m)}</span>
                                   </div>
                                 ))}
                               </div>
                             </div>
                             <div className="glass rounded-xl p-6">
                               <h4 className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-2`}>PERCHÉ LE STELLE DICONO QUESTO</h4>
-                              <p className="text-text-muted text-sm leading-relaxed font-body">{v.reasoning}</p>
+                              <p className="text-text-muted text-sm leading-relaxed font-body">{decodeHtmlEntities(v.reasoning)}</p>
                             </div>
                             {v.cosmicAlignment && (
                               <div className="text-center glass rounded-xl p-4">
-                                <span className="text-xs text-amber font-ui">&#9670; {v.cosmicAlignment}</span>
+                                <span className="text-xs text-amber font-ui">&#9670; {decodeHtmlEntities(v.cosmicAlignment)}</span>
                               </div>
                             )}
                           </div>

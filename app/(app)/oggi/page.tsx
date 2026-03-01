@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { MarkdownText } from "@/components/markdown-text";
-import { PushBanner } from "@/components/push-banner";
+import dynamic from "next/dynamic";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+
+const PushBanner = dynamic(() => import("@/components/push-banner").then(m => ({ default: m.PushBanner })), { ssr: false });
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -28,6 +30,7 @@ export default function OggiPage() {
   const [streak, setStreak] = useState(0);
   const [todayMood, setTodayMood] = useState(0);
   const [moodSaved, setMoodSaved] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [horoscopeLoading, setHoroscopeLoading] = useState(true);
   const [lunarRitual, setLunarRitual] = useState<{
@@ -52,6 +55,7 @@ export default function OggiPage() {
       if (profileData.profile) setProfile(profileData.profile);
       if (profileData.user?.name) setUserName(profileData.user.name.split(" ")[0]);
       if (profileData.user?.credits !== undefined) setCredits(profileData.user.credits);
+      if (profileData.isPremium) setIsPremium(true);
       if (checkinData.streak) setStreak(checkinData.streak);
 
       if (checkinData.checkins?.length > 0) {
@@ -223,7 +227,7 @@ export default function OggiPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, ease: premium }}
-          className="glass rounded-2xl p-6 mb-5 dimensional glow border border-amber/10"
+          className={`glass rounded-2xl p-6 mb-5 dimensional glow border border-amber/10 ${isPremium ? "premium-glow" : ""}`}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="text-[10px] text-amber font-ui tracking-[0.2em]">&#9670; IL TUO OROSCOPO DI OGGI</div>

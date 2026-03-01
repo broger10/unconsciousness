@@ -1,12 +1,6 @@
-/* Fonts loaded at runtime — must precede tailwindcss per CSS spec */
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Syne:wght@400;500;600;700;800&family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&display=swap");
-
 @import "tailwindcss";
 
 :root {
-  --font-fraunces: "Fraunces", Georgia, serif;
-  --font-syne: "Syne", system-ui, sans-serif;
-  --font-cormorant: "Cormorant Infant", Georgia, serif;
   /* Alchemical palette — dark forest green + raw amber + verdigris */
   --bg-base: #0D1710;
   --bg-surface: #141F16;
@@ -171,6 +165,7 @@ body {
 }
 
 .aurora-bg {
+  will-change: transform;
   background:
     radial-gradient(ellipse 600px 400px at var(--aurora-x1, 30%) var(--aurora-y1, 20%), rgba(78,158,138,0.07) 0%, transparent 70%),
     radial-gradient(ellipse 500px 350px at var(--aurora-x2, 70%) var(--aurora-y2, 60%), rgba(201,169,110,0.05) 0%, transparent 70%),
@@ -229,4 +224,81 @@ body {
 
 .font-ui {
   font-family: var(--font-syne), system-ui, sans-serif;
+}
+
+/* Oracle badge — premium user pulse glow */
+@keyframes oracle-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(201,169,110,0.15), 0 0 16px rgba(201,169,110,0.05); }
+  50% { box-shadow: 0 0 16px rgba(201,169,110,0.3), 0 0 32px rgba(201,169,110,0.1); }
+}
+.oracle-badge {
+  animation: oracle-pulse 3s ease-in-out infinite;
+}
+
+/* Premium glow — subtle amber glow on premium cards */
+@keyframes premium-glow-anim {
+  0%, 100% { box-shadow: 0 0 20px rgba(201,169,110,0.08); }
+  50% { box-shadow: 0 0 30px rgba(201,169,110,0.15), 0 0 60px rgba(201,169,110,0.05); }
+}
+.premium-glow {
+  animation: premium-glow-anim 4s ease-in-out infinite;
+  border: 1px solid rgba(201, 169, 110, 0.12);
+}
+
+/* Il Filo — shimmer, pulse, toast, fade-in */
+@keyframes filo-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes filo-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes filo-toast-enter {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes filo-fade-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.filo-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(201,169,110,0.08), transparent);
+  background-size: 200% 100%;
+  animation: filo-shimmer 1.8s linear infinite;
+}
+
+.filo-pulse {
+  animation: filo-pulse 2.5s ease-in-out infinite;
+}
+
+.filo-toast-enter {
+  animation: filo-toast-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.filo-fade-in {
+  animation: filo-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Content lazy — browser rendering optimization for below-fold */
+.content-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Accessibility — respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse {
+    animation: none !important;
+  }
+  .filo-toast-enter, .filo-fade-in {
+    animation: none !important;
+  }
+  .grain::after {
+    display: none;
+  }
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MarkdownText } from "@/components/markdown-text";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -268,7 +269,7 @@ export default function MappaPage() {
                       {t.description}
                     </div>
                     <p className="text-xs text-text-secondary font-body italic leading-relaxed">
-                      {t.interpretation}
+                      {decodeHtmlEntities(t.interpretation)}
                     </p>
                   </div>
                 </div>
@@ -276,7 +277,7 @@ export default function MappaPage() {
             </div>
           ) : (
             <p className="text-sm text-text-muted font-body italic">
-              {transitsMessage || "Il cielo è quieto oggi. Un momento per integrare."}
+              {transitsMessage ? decodeHtmlEntities(transitsMessage) : "Il cielo è quieto oggi. Un momento per integrare."}
             </p>
           )}
         </motion.div>

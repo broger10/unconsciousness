@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
 import { Paywall } from "@/components/paywall";
+import { SplashScreen } from "@/components/splash-screen";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen">
+      <SplashScreen />
       <main className="pb-24">{children}</main>
       <BottomTabBar />
     </div>

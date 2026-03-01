@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MarkdownText } from "@/components/markdown-text";
+import Link from "next/link";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -145,7 +146,7 @@ export default function DiarioPage() {
             {streak > 0 && (
               <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
                 <span className="text-amber text-xs ember-pulse">&#9670;</span>
-                <span className="text-amber text-xs font-bold font-ui">{streak} giorni</span>
+                <span className="text-amber text-xs font-bold font-ui">{streak} {streak === 1 ? "giorno" : "giorni"}</span>
               </span>
             )}
           </div>
@@ -308,6 +309,25 @@ export default function DiarioPage() {
             </div>
           ))}
         </div>
+
+        {/* Il Filo entry point — visible with 3+ journal entries */}
+        {journals.length >= 3 && (
+          <Link
+            href="/diario/il-filo"
+            className="block glass rounded-xl p-5 border border-amber/10 transition-all duration-300 hover:border-amber/20 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-amber text-xl filo-pulse">&#10038;</span>
+              <div className="flex-1">
+                <div className="text-sm font-display font-bold">Il Filo</div>
+                <div className="text-xs text-text-muted font-body italic">
+                  Scopri i pattern nascosti nelle tue riflessioni
+                </div>
+              </div>
+              <span className="text-text-muted text-xs">&#8594;</span>
+            </div>
+          </Link>
+        )}
 
         {/* Empty state */}
         {timeline.length === 0 && (

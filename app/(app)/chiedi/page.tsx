@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { MarkdownText } from "@/components/markdown-text";
+import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 

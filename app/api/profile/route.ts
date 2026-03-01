@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { generateDailyInsight } from "@/lib/ai";
 
 export async function GET() {
   const session = await auth();
@@ -9,49 +8,21 @@ export async function GET() {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  const profile = await db.profile.findUnique({
-    where: { userId: session.user.id },
-  });
-
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, email: true, image: true, credits: true },
-  });
-
-  // Generate daily insight if profile exists
-  let dailyInsight = "";
-  if (profile?.onboardingComplete) {
-    const recentCheckins = await db.dailyCheckin.findMany({
+  const [profile, user, subscription] = await Promise.all([
+    db.profile.findUnique({ where: { userId: session.user.id } }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true, image: true, credits: true },
+    }),
+    db.subscription.findUnique({
       where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    });
+      select: { status: true },
+    }),
+  ]);
 
-    const recentJournals = await db.journal.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    });
-
-    try {
-      const result = await generateDailyInsight(
-        {
-          sunSign: profile.sunSign || undefined,
-          moonSign: profile.moonSign || undefined,
-          risingSign: profile.risingSign || undefined,
-          values: profile.values,
-          blindSpots: profile.blindSpots,
-          shadows: profile.shadows,
-          personalitySummary: profile.personalitySummary,
-        },
-        recentCheckins,
-        recentJournals
-      );
-      dailyInsight = result.horoscope;
-    } catch {
-      dailyInsight = "";
-    }
-  }
-
-  return NextResponse.json({ profile, user, dailyInsight });
+  return NextResponse.json({
+    profile,
+    user,
+    isPremium: subscription?.status === "active",
+  });
 }

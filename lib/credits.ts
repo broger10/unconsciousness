@@ -9,6 +9,7 @@ export const CREDIT_COSTS = {
   compatibility: 10,
   lunar_ritual: 3,
   pdf_report: 20,
+  pattern_analysis: 10,
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;

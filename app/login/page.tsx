@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { UnLogo } from "@/components/un-logo";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -34,8 +35,8 @@ export default function LoginPage() {
           >
             &#9670;
           </motion.div>
-          <h1 className="text-2xl font-bold font-display mb-2">
-            <span className="text-amber">un</span><span className="text-gradient">consciousness</span>
+          <h1 className="mb-2">
+            <UnLogo size="lg" />
           </h1>
           <p className="text-text-secondary font-body text-base italic">
             Il tuo cielo ti aspetta

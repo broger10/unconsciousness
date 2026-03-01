@@ -35,8 +35,8 @@ export const PLANET_SYMBOLS: Record<string, string> = {
 // Approximate current transit positions (updated periodically)
 // These represent rough positions for slow-moving planets in 2026
 // Fast planets (Sun, Moon, Mercury, Venus, Mars) change frequently
-export function getCurrentTransits(): Array<{ planet: string; sign: string; degree: number }> {
-  const now = new Date();
+export function getCurrentTransits(date?: Date): Array<{ planet: string; sign: string; degree: number }> {
+  const now = date || new Date();
   const dayOfYear = Math.floor(
     (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000
   );
@@ -106,14 +106,15 @@ function signStartDegree(sign: string): number {
 // Find significant transits for a natal chart
 // Uses real transit degrees vs natal sign midpoints (best precision available)
 export function findSignificantTransits(
-  natalPlanets: Array<{ name: string; sign: string }>
+  natalPlanets: Array<{ name: string; sign: string }>,
+  date?: Date
 ): Array<{
   transitPlanet: string;
   aspect: AspectType;
   natalPlanet: string;
   description: string;
 }> {
-  const currentTransits = getCurrentTransits();
+  const currentTransits = getCurrentTransits(date);
   const results: Array<{
     transitPlanet: string;
     aspect: AspectType;
