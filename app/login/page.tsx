@@ -29,12 +29,37 @@ export default function LoginPage() {
 
         <div className="text-center mb-10">
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", delay: 0.2, stiffness: 200 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 1, ease: premium }}
             className="mb-6 flex justify-center"
           >
-            <Diamond size={40} className="text-amber breathe" />
+            <svg width="140" height="140" viewBox="0 0 140 140" fill="none" className="drop-shadow-[0_0_30px_rgba(201,168,76,0.12)]">
+              <defs>
+                <radialGradient id="lg">
+                  <stop offset="0%" stopColor="#C9A84C" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#C9A84C" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              {/* Ambient glow */}
+              <circle cx="70" cy="70" r="65" fill="url(#lg)" />
+              {/* Orbital planes */}
+              <ellipse cx="70" cy="70" rx="55" ry="20" stroke="#4A9B8E" strokeWidth="0.5" opacity="0.3" transform="rotate(-30 70 70)" />
+              <ellipse cx="70" cy="70" rx="40" ry="28" stroke="#C9A84C" strokeWidth="0.6" opacity="0.35" transform="rotate(20 70 70)" />
+              <ellipse cx="70" cy="70" rx="25" ry="16" stroke="#C4614A" strokeWidth="0.7" opacity="0.3" transform="rotate(-15 70 70)" />
+              {/* Planets */}
+              <circle cx="25" cy="55" r="3" fill="#4A9B8E" opacity="0.75" />
+              <circle cx="105" cy="55" r="2.5" fill="#C9A84C" opacity="0.8" />
+              <circle cx="52" cy="78" r="2" fill="#C4614A" opacity="0.65" />
+              {/* Central sun */}
+              <circle cx="70" cy="70" r="6" fill="#C9A84C" opacity="0.85" />
+              <circle cx="70" cy="70" r="3" fill="#F0E6C8" />
+              {/* Distant stars */}
+              <circle cx="15" cy="25" r="1" fill="#C9A84C" opacity="0.2" />
+              <circle cx="130" cy="30" r="1.2" fill="#4A9B8E" opacity="0.15" />
+              <circle cx="20" cy="115" r="0.8" fill="#C9A84C" opacity="0.15" />
+              <circle cx="125" cy="110" r="1" fill="#4A9B8E" opacity="0.1" />
+            </svg>
           </motion.div>
           <h1 className="mb-2">
             <UnLogo size="lg" />
