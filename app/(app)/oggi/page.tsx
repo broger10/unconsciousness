@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+import { FraseShareCard, TransitShareCard } from "@/components/share-card";
+import { shareCardAsImage } from "@/lib/share";
 
 const PushBanner = dynamic(() => import("@/components/push-banner").then(m => ({ default: m.PushBanner })), { ssr: false });
 
@@ -46,6 +48,34 @@ export default function OggiPage() {
   } | null>(null);
   const [ritualText, setRitualText] = useState("");
   const [ritualSaving, setRitualSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [sharingRitual, setSharingRitual] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  const transitCardRef = useRef<HTMLDivElement>(null);
+
+  const handleShare = useCallback(async () => {
+    if (!shareCardRef.current || sharing || !frase) return;
+    setSharing(true);
+    try {
+      await shareCardAsImage(shareCardRef.current, "unconsciousness-oggi.png");
+    } catch {
+      // Share cancelled or failed silently
+    } finally {
+      setSharing(false);
+    }
+  }, [sharing, frase]);
+
+  const handleShareRitual = useCallback(async () => {
+    if (!transitCardRef.current || sharingRitual) return;
+    setSharingRitual(true);
+    try {
+      await shareCardAsImage(transitCardRef.current, "unconsciousness-luna.png");
+    } catch {
+      // cancelled
+    } finally {
+      setSharingRitual(false);
+    }
+  }, [sharingRitual]);
 
   useEffect(() => {
     Promise.all([
@@ -238,6 +268,29 @@ export default function OggiPage() {
 
           {/* Lower ornament */}
           <div className="text-amber/30 text-sm mt-8 ember-pulse">✦</div>
+
+          {/* Share button */}
+          {frase && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2, duration: 0.5 }}
+              onClick={handleShare}
+              disabled={sharing}
+              className="mt-8 flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber/20 text-amber/70 text-xs font-ui hover:border-amber/40 hover:text-amber transition-all disabled:opacity-40"
+            >
+              {sharing ? (
+                <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+              )}
+              Condividi nelle stories
+            </motion.button>
+          )}
         </div>
 
         {/* Bottom: branding + scroll hint */}
@@ -249,6 +302,20 @@ export default function OggiPage() {
             Scorri per il tuo cielo ↓
           </p>
         </div>
+
+        {/* Hidden share card for rendering */}
+        {frase && profile && (
+          <div style={{ position: "absolute", left: -9999, top: 0 }}>
+            <FraseShareCard
+              ref={shareCardRef}
+              frase={frase}
+              sunSign={profile.sunSign || ""}
+              moonSign={profile.moonSign || ""}
+              risingSign={profile.risingSign || ""}
+              date={dateStr}
+            />
+          </div>
+        )}
       </motion.div>
 
       {/* Card 2 — Energia Cosmica */}
@@ -351,10 +418,26 @@ export default function OggiPage() {
                 <div>
                   <p className="text-text-secondary font-body italic text-sm mb-2">Ritual completato ✦</p>
                   {lunarRitual.intention && (
-                    <p className="text-text-primary font-body italic text-sm leading-relaxed">
+                    <p className="text-text-primary font-body italic text-sm leading-relaxed mb-4">
                       &ldquo;{lunarRitual.intention}&rdquo;
                     </p>
                   )}
+                  <button
+                    onClick={handleShareRitual}
+                    disabled={sharingRitual}
+                    className="w-full py-2.5 rounded-xl text-sm font-ui flex items-center justify-center gap-2 border border-amber/20 text-amber/70 hover:border-amber/40 hover:text-amber transition-all disabled:opacity-40"
+                  >
+                    {sharingRitual ? (
+                      <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                        <polyline points="16 6 12 2 8 6" />
+                        <line x1="12" y1="2" x2="12" y2="15" />
+                      </svg>
+                    )}
+                    Condividi nelle stories ✦
+                  </button>
                 </div>
               ) : (
                 <div>
@@ -392,6 +475,16 @@ export default function OggiPage() {
                   </button>
                 </div>
               )}
+              {/* Hidden transit share card */}
+              <div style={{ position: "absolute", left: -9999, top: 0 }}>
+                <TransitShareCard
+                  ref={transitCardRef}
+                  eventName={lunarRitual.phase === "new_moon" ? "Luna Nuova" : "Luna Piena"}
+                  eventSign={lunarRitual.sign || ""}
+                  personalMeaning={lunarRitual.aiMessage || ""}
+                  userSunSign={profile.sunSign || ""}
+                />
+              </div>
             </motion.div>
           </div>
         </div>

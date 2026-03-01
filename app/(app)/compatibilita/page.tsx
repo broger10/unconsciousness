@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { decodeHtmlEntities } from "@/lib/utils";
+import { CompatShareCard } from "@/components/share-card";
+import { shareCardAsImage } from "@/lib/share";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -93,91 +95,28 @@ export default function CompatibilitaPage() {
     }
   };
 
-  const shareResult = async () => {
-    if (!result) return;
+  const [userName, setUserName] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const compatCardRef = useRef<HTMLDivElement>(null);
 
-    const shareText = `${result.highlightQuote || "Scopri la danza tra due anime"}\n\nScopri la tua compatibilità cosmica → unconsciousness.vercel.app`;
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => { if (d.user?.name) setUserName(d.user.name.split(" ")[0]); })
+      .catch(() => {});
+  }, []);
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Compatibilità Cosmica",
-          text: shareText,
-        });
-      } catch {
-        /* user cancelled */
-      }
-    } else {
-      await navigator.clipboard.writeText(shareText);
+  const handleShareCard = useCallback(async () => {
+    if (!compatCardRef.current || sharing || !result) return;
+    setSharing(true);
+    try {
+      await shareCardAsImage(compatCardRef.current, "compatibilita-cosmica.png");
+    } catch {
+      // cancelled or failed
+    } finally {
+      setSharing(false);
     }
-  };
-
-  const downloadShareImage = () => {
-    if (!shareCardRef.current || !result) return;
-    // Create a canvas from the share card
-    const card = shareCardRef.current;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = 600;
-    canvas.height = 400;
-
-    // Draw dark background
-    ctx.fillStyle = "#0D1710";
-    ctx.fillRect(0, 0, 600, 400);
-
-    // Draw border
-    ctx.strokeStyle = "rgba(201, 169, 110, 0.3)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(20, 20, 560, 360);
-
-    // Title
-    ctx.fillStyle = "#C9A96E";
-    ctx.font = "bold 16px Georgia, serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Compatibilità Cosmica", 300, 60);
-
-    // Signs
-    ctx.font = "bold 24px Georgia, serif";
-    ctx.fillStyle = "#EDE8DC";
-    ctx.fillText(`☉ ${result.person1Sun}  ✦  ☉ ${result.person2Sun}`, 300, 110);
-
-    // Quote
-    ctx.font = "italic 16px Georgia, serif";
-    ctx.fillStyle = "#B8AF9B";
-    const quote = result.highlightQuote || "";
-    const words = quote.split(" ");
-    let line = "";
-    let y = 170;
-    for (const word of words) {
-      const test = line + word + " ";
-      if (ctx.measureText(test).width > 480) {
-        ctx.fillText(line.trim(), 300, y);
-        line = word + " ";
-        y += 28;
-      } else {
-        line = test;
-      }
-    }
-    if (line.trim()) ctx.fillText(line.trim(), 300, y);
-
-    // Footer
-    ctx.fillStyle = "#6E6A60";
-    ctx.font = "12px system-ui, sans-serif";
-    ctx.fillText("unconsciousness — il tuo specchio cosmico", 300, 350);
-    ctx.fillText("unconsciousness.vercel.app", 300, 370);
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "compatibilita-cosmica.png";
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  };
+  }, [sharing, result]);
 
   return (
     <div className="min-h-screen relative">
@@ -344,24 +283,35 @@ export default function CompatibilitaPage() {
                 </div>
               )}
 
-              {/* Share buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={shareResult}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-ui bg-amber text-bg-base dimensional hover:glow transition-all"
-                >
-                  Condividi ✦
-                </button>
-                <button
-                  onClick={downloadShareImage}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-ui glass border border-amber/15 text-amber hover:glow transition-all"
-                >
-                  Scarica immagine
-                </button>
-              </div>
+              {/* Share button */}
+              <button
+                onClick={handleShareCard}
+                disabled={sharing}
+                className="w-full py-3 rounded-xl text-sm font-ui flex items-center justify-center gap-2 border border-amber/20 text-amber/80 hover:border-amber/40 hover:text-amber transition-all disabled:opacity-40"
+              >
+                {sharing ? (
+                  <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                )}
+                Condividi nelle stories ✦
+              </button>
 
-              {/* Hidden share card for canvas generation */}
-              <div ref={shareCardRef} className="hidden" />
+              {/* Hidden share card for image generation */}
+              <div style={{ position: "absolute", left: -9999, top: 0 }}>
+                <CompatShareCard
+                  ref={compatCardRef}
+                  person1Name={userName || "Tu"}
+                  person1Sun={result.person1Sun}
+                  person2Name={name || "?"}
+                  person2Sun={result.person2Sun}
+                  highlightQuote={decodeHtmlEntities(result.highlightQuote || "")}
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
