@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { UnLogo } from "@/components/un-logo";
+import { Diamond } from "lucide-react";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       >
         <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="text-amber text-lg">&#9670;</span>
+            <Diamond size={18} className="text-amber" />
             <UnLogo />
           </Link>
           <div className="flex items-center gap-4">
@@ -43,7 +44,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
             <div className="flex items-center gap-2">
-              <span className="text-amber">&#9670;</span>
+              <Diamond size={14} className="text-amber" />
               <UnLogo size="sm" />
             </div>
             <div className="flex items-center gap-6 text-xs text-text-muted font-ui">

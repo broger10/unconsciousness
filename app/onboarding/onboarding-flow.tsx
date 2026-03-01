@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
+import { Sparkle, Diamond, Gem, Moon, Sun, ArrowUp } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────
 interface ChartData {
@@ -12,12 +13,6 @@ interface ChartData {
 interface OnboardingFlowProps {
   userName: string;
 }
-
-const ZODIAC_SYMBOL: Record<string, string> = {
-  Ariete: "♈", Toro: "♉", Gemelli: "♊", Cancro: "♋",
-  Leone: "♌", Vergine: "♍", Bilancia: "♎", Scorpione: "♏",
-  Sagittario: "♐", Capricorno: "♑", Acquario: "♒", Pesci: "♓",
-};
 
 // ─── Main Flow ────────────────────────────────────────
 export function OnboardingFlow({ userName }: OnboardingFlowProps) {
@@ -45,6 +40,12 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           birthCity,
         }),
       });
+
+      if (!chartRes.ok) {
+        setStep(2);
+        return;
+      }
+
       const chartResult = await chartRes.json();
       const chart = chartResult.chart;
       setChartData(chart);
@@ -128,7 +129,9 @@ function StepBenvenuto({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 relative">
       {/* Star */}
-      <div className="text-amber text-6xl onb-star-hero mb-8">✦</div>
+      <div className="mb-8">
+        <Sparkle size={48} className="text-amber onb-star-hero" />
+      </div>
 
       {/* Title + body */}
       <div className="onb-fade-in text-center" style={{ animationDelay: "0.8s" }}>
@@ -149,7 +152,7 @@ function StepBenvenuto({
           onClick={onNext}
           className="bg-amber text-bg-base px-8 py-3.5 rounded-xl font-ui font-semibold text-base shadow-lg shadow-amber/20 hover:bg-amber-glow transition-colors"
         >
-          Inizia ✦
+          Inizia
         </button>
       </div>
     </div>
@@ -243,7 +246,7 @@ function StepDatoSacro({
             disabled={!birthDate}
             className="w-full bg-amber text-bg-base py-3.5 rounded-xl font-ui font-semibold text-base shadow-lg shadow-amber/20 hover:bg-amber-glow transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Crea il mio tema ✦
+            Crea il mio tema
           </button>
         </div>
       </div>
@@ -320,6 +323,12 @@ function StepRivelazione({
   phrase: string;
   onNext: () => void;
 }) {
+  const signs: { symbol: ReactNode; label: string; sign: string }[] = [
+    { symbol: <Sun size={24} className="text-amber" />, label: "SOLE", sign: chart.sunSign },
+    { symbol: <Moon size={24} className="text-amber" />, label: "LUNA", sign: chart.moonSign },
+    { symbol: <ArrowUp size={24} className="text-amber" />, label: "ASCENDENTE", sign: chart.risingSign },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 relative">
       <div className="w-full max-w-md mx-auto text-center">
@@ -330,18 +339,14 @@ function StepRivelazione({
 
         {/* Three signs */}
         <div className="flex items-center justify-center gap-8 mb-8 onb-fade-in" style={{ animationDelay: "0.2s" }}>
-          {[
-            { symbol: "☀️", label: "SOLE", sign: chart.sunSign },
-            { symbol: "🌙", label: "LUNA", sign: chart.moonSign },
-            { symbol: "↑", label: "ASCENDENTE", sign: chart.risingSign },
-          ].map((item) => (
+          {signs.map((item) => (
             <div key={item.label} className="text-center">
-              <div className="text-2xl mb-1">{item.symbol}</div>
+              <div className="flex justify-center mb-1">{item.symbol}</div>
               <div className="text-[10px] text-text-muted font-ui tracking-[0.1em]">
                 {item.label}
               </div>
               <div className="font-display text-amber text-xl font-semibold mt-0.5">
-                {ZODIAC_SYMBOL[item.sign] || ""} {item.sign}
+                {item.sign}
               </div>
             </div>
           ))}
@@ -372,7 +377,7 @@ function StepRivelazione({
             onClick={onNext}
             className="bg-amber text-bg-base px-8 py-3.5 rounded-xl font-ui font-semibold text-base shadow-lg shadow-amber/20 hover:bg-amber-glow transition-colors"
           >
-            È davvero così ✦
+            È davvero così
           </button>
         </div>
       </div>
@@ -388,27 +393,27 @@ function StepBussola({
   onComplete: () => void;
   completing: boolean;
 }) {
-  const features = [
+  const features: { icon: ReactNode; title: string; text: string; color: string }[] = [
     {
-      icon: "◆",
+      icon: <Diamond size={20} />,
       title: "OGGI",
       text: "La tua frase del giorno. Il tuo cielo. Ogni mattina.",
       color: "text-amber",
     },
     {
-      icon: "◇",
+      icon: <Gem size={20} />,
       title: "MAPPA",
       text: "I tuoi 10 pianeti. Chi sei sotto la superficie.",
       color: "text-verdigris",
     },
     {
-      icon: "✦",
+      icon: <Sparkle size={20} />,
       title: "ORACOLO",
       text: "Fai una domanda. Le stelle conoscono già la risposta.",
       color: "text-amber",
     },
     {
-      icon: "🌙",
+      icon: <Moon size={20} />,
       title: "DIARIO",
       text: "Scrivi. L'AI trova i pattern che tu non vedi.",
       color: "text-amber-glow",
@@ -451,7 +456,7 @@ function StepBussola({
             disabled={completing}
             className="w-full bg-amber text-bg-base py-4 rounded-xl font-ui font-semibold text-lg shadow-lg shadow-amber/20 hover:bg-amber-glow transition-colors disabled:opacity-60"
           >
-            {completing ? "..." : "Entra nel cosmo ✦"}
+            {completing ? "..." : "Entra nel cosmo"}
           </button>
         </div>
       </div>

@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       });
 
       const payload = JSON.stringify({
-        title: "✦ Il tuo cielo oggi",
+        title: "Il tuo cielo oggi",
         body,
         url: "/oggi",
       });

@@ -7,17 +7,22 @@ import dynamic from "next/dynamic";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { FraseShareCard, TransitShareCard } from "@/components/share-card";
 import { shareCardAsImage } from "@/lib/share";
+import {
+  Circle, CircleDashed, CircleDot, Diamond, Sparkles, Sparkle,
+  Sun, Moon, ArrowUp, Share, Eye, Compass, BookOpen,
+  type LucideIcon,
+} from "lucide-react";
 
 const PushBanner = dynamic(() => import("@/components/push-banner").then(m => ({ default: m.PushBanner })), { ssr: false });
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
-const moodSymbols = [
-  { v: 1, s: "&#9676;", l: "Pesante" },
-  { v: 2, s: "&#9681;", l: "Bassa" },
-  { v: 3, s: "&#9672;", l: "Neutra" },
-  { v: 4, s: "&#9670;", l: "Buona" },
-  { v: 5, s: "&#10038;", l: "Radiante" },
+const moodIcons: { v: number; Icon: LucideIcon; l: string }[] = [
+  { v: 1, Icon: Circle, l: "Pesante" },
+  { v: 2, Icon: CircleDashed, l: "Bassa" },
+  { v: 3, Icon: CircleDot, l: "Neutra" },
+  { v: 4, Icon: Diamond, l: "Buona" },
+  { v: 5, Icon: Sparkles, l: "Radiante" },
 ];
 
 export default function OggiPage() {
@@ -129,7 +134,7 @@ export default function OggiPage() {
       });
       if (res.ok) {
         setStreak((s) => s + 1);
-        if (credits !== null) setCredits((c) => c !== null ? Math.max(0, c - 2) : c);
+        if (credits !== null && !isPremium) setCredits((c) => c !== null ? Math.max(0, c - 2) : c);
       }
     } catch {
       // Check-in already saved optimistically
@@ -155,7 +160,7 @@ export default function OggiPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <div className="text-4xl text-amber ember-pulse mb-4">&#9670;</div>
+          <Diamond size={36} className="text-amber ember-pulse mb-4" />
           <p className="text-text-muted text-sm font-ui">Allineo le stelle...</p>
         </motion.div>
       </div>
@@ -166,7 +171,7 @@ export default function OggiPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <div className="text-4xl text-amber ember-pulse mb-4">&#9670;</div>
+          <Diamond size={36} className="text-amber ember-pulse mb-4" />
           <p className="text-text-muted text-sm font-ui">Preparo il tuo cielo...</p>
         </motion.div>
       </div>
@@ -211,13 +216,13 @@ export default function OggiPage() {
             <div className="flex items-center gap-2">
               {streak > 0 && (
                 <span className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
-                  <span className="text-amber text-xs ember-pulse">&#9670;</span>
+                  <Diamond size={12} className="text-amber ember-pulse" />
                   <span className="text-amber text-xs font-bold font-ui">{streak}</span>
                 </span>
               )}
               {credits !== null && credits < 100 && (
                 <span className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
-                  <span className="text-verdigris text-xs">&#10038;</span>
+                  <Sparkle size={12} className="text-verdigris" />
                   <span className="text-verdigris text-xs font-bold font-ui">{credits}</span>
                 </span>
               )}
@@ -230,23 +235,25 @@ export default function OggiPage() {
           {/* Signs trio */}
           <div className="flex items-center justify-center gap-5 mb-10">
             <div className="text-center">
-              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">☉</span>
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5"><Sun size={12} /></span>
               <span className="text-[13px] font-display text-amber font-semibold">{profile.sunSign}</span>
             </div>
-            <span className="text-amber/25 text-[8px]">✦</span>
+            <Sparkle size={8} className="text-amber/25" />
             <div className="text-center">
-              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">☽</span>
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5"><Moon size={12} /></span>
               <span className="text-[13px] font-display text-amber font-semibold">{profile.moonSign}</span>
             </div>
-            <span className="text-amber/25 text-[8px]">✦</span>
+            <Sparkle size={8} className="text-amber/25" />
             <div className="text-center">
-              <span className="text-text-muted/70 text-xs font-ui block mb-0.5">↑</span>
+              <span className="text-text-muted/70 text-xs font-ui block mb-0.5"><ArrowUp size={12} /></span>
               <span className="text-[13px] font-display text-amber font-semibold">{profile.risingSign}</span>
             </div>
           </div>
 
           {/* Upper ornament */}
-          <div className="text-amber/30 text-sm mb-8 ember-pulse">✦</div>
+          <div className="text-sm mb-8">
+            <Sparkle size={14} className="text-amber/30 ember-pulse" />
+          </div>
 
           {/* The phrase */}
           <div className="px-2">
@@ -267,7 +274,9 @@ export default function OggiPage() {
           </div>
 
           {/* Lower ornament */}
-          <div className="text-amber/30 text-sm mt-8 ember-pulse">✦</div>
+          <div className="text-sm mt-8">
+            <Sparkle size={14} className="text-amber/30 ember-pulse" />
+          </div>
 
           {/* Share button */}
           {frase && (
@@ -282,11 +291,7 @@ export default function OggiPage() {
               {sharing ? (
                 <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                  <polyline points="16 6 12 2 8 6" />
-                  <line x1="12" y1="2" x2="12" y2="15" />
-                </svg>
+                <Share size={14} />
               )}
               Condividi nelle stories
             </motion.button>
@@ -360,7 +365,9 @@ export default function OggiPage() {
             transition={{ ease: premium }}
             className={`glass rounded-2xl p-6 dimensional glow border border-amber/10 ${isPremium ? "premium-glow" : ""}`}
           >
-            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">&#9670; IL TUO CIELO</div>
+            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4 flex items-center gap-1">
+              <Diamond size={10} className="inline" /> IL TUO CIELO
+            </div>
             {horoscopeLoading ? (
               <div className="flex items-center gap-3 py-4">
                 <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -408,15 +415,17 @@ export default function OggiPage() {
                 lunarRitual.phase === "new_moon" ? "border-verdigris/15" : "border-amber-glow/15"
               }`}
             >
-              <div className="text-[10px] font-ui tracking-[0.2em] mb-4" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
+              <div className="text-[10px] font-ui tracking-[0.2em] mb-4 flex items-center gap-1" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
                 {lunarRitual.phase === "new_moon"
-                  ? `✦ LUNA NUOVA IN ${lunarRitual.sign?.toUpperCase()}`
-                  : `☾ LUNA PIENA IN ${lunarRitual.sign?.toUpperCase()}`}
+                  ? <><Sparkle size={10} className="inline" /> LUNA NUOVA IN {lunarRitual.sign?.toUpperCase()}</>
+                  : <><Moon size={10} className="inline" /> LUNA PIENA IN {lunarRitual.sign?.toUpperCase()}</>}
               </div>
 
               {lunarRitual.completed ? (
                 <div>
-                  <p className="text-text-secondary font-body italic text-sm mb-2">Ritual completato ✦</p>
+                  <p className="text-text-secondary font-body italic text-sm mb-2 flex items-center gap-1">
+                    Ritual completato <Sparkle size={10} className="inline" />
+                  </p>
                   {lunarRitual.intention && (
                     <p className="text-text-primary font-body italic text-sm leading-relaxed mb-4">
                       &ldquo;{lunarRitual.intention}&rdquo;
@@ -430,13 +439,9 @@ export default function OggiPage() {
                     {sharingRitual ? (
                       <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
                     ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                        <polyline points="16 6 12 2 8 6" />
-                        <line x1="12" y1="2" x2="12" y2="15" />
-                      </svg>
+                      <Share size={14} />
                     )}
-                    Condividi nelle stories ✦
+                    Condividi nelle stories
                   </button>
                 </div>
               ) : (
@@ -470,8 +475,8 @@ export default function OggiPage() {
                     {ritualSaving
                       ? "..."
                       : lunarRitual.phase === "new_moon"
-                      ? "Sigilla l'intenzione ✦"
-                      : "Rilascia ✦"}
+                      ? "Sigilla l'intenzione"
+                      : "Rilascia"}
                   </button>
                 </div>
               )}
@@ -500,11 +505,11 @@ export default function OggiPage() {
             transition={{ ease: premium }}
             className="glass rounded-2xl p-6 dimensional"
           >
-            <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4">
-              {moodSaved ? "&#9670; REGISTRATO OGGI" : "COME TI SENTI OGGI?"}
+            <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4 flex items-center gap-1">
+              {moodSaved ? <><Diamond size={10} className="inline" /> REGISTRATO OGGI</> : "COME TI SENTI OGGI?"}
             </div>
             <div className="flex justify-between gap-2">
-              {moodSymbols.map((m) => (
+              {moodIcons.map((m) => (
                 <button
                   key={m.v}
                   onClick={() => !moodSaved && saveMood(m.v)}
@@ -517,7 +522,7 @@ export default function OggiPage() {
                       : "hover:bg-bg-glass text-text-muted hover:text-amber"
                   }`}
                 >
-                  <span className="text-2xl" dangerouslySetInnerHTML={{ __html: m.s }} />
+                  <m.Icon size={24} />
                   <span className="text-[10px] font-ui">{m.l}</span>
                 </button>
               ))}
@@ -533,35 +538,35 @@ export default function OggiPage() {
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
             <Link href="/chiedi" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-amber/10 bg-gradient-to-br from-amber/6 to-verdigris/3 dimensional h-full group hover:glow transition-all">
-                <div className="text-2xl text-amber mb-3">&#10038;</div>
+                <Sparkles size={24} className="text-amber mb-3" />
                 <div className="text-sm font-bold font-display mb-1">Chiedi all&apos;oracolo</div>
                 <div className="text-[10px] text-text-muted font-ui">Ogni domanda apre una porta</div>
               </div>
             </Link>
             <Link href="/visions" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-amber/3 dimensional h-full group hover:glow transition-all">
-                <div className="text-2xl text-verdigris mb-3">&#9672;</div>
+                <Compass size={24} className="text-verdigris mb-3" />
                 <div className="text-sm font-bold font-display mb-1">Tre Destini</div>
                 <div className="text-[10px] text-text-muted font-ui">Il tuo futuro, triplicato</div>
               </div>
             </Link>
             <Link href="/mappa" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-sienna/10 bg-gradient-to-br from-sienna/6 to-amber/3 dimensional h-full group hover:glow transition-all">
-                <div className="text-2xl text-sienna mb-3">&#9681;</div>
+                <Eye size={24} className="text-sienna mb-3" />
                 <div className="text-sm font-bold font-display mb-1">Le tue ombre</div>
                 <div className="text-[10px] text-text-muted font-ui">Ci&ograve; che non vedi</div>
               </div>
             </Link>
             <Link href="/compatibilita" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-sienna/3 dimensional h-full group hover:glow transition-all">
-                <div className="text-2xl text-verdigris mb-3">&#10038;</div>
+                <Sparkle size={24} className="text-verdigris mb-3" />
                 <div className="text-sm font-bold font-display mb-1">Compatibilit&agrave;</div>
                 <div className="text-[10px] text-text-muted font-ui">Due anime, una danza</div>
               </div>
             </Link>
             <Link href="/diario" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-amber-glow/10 bg-gradient-to-br from-amber-glow/5 to-amber/3 dimensional h-full group hover:glow transition-all">
-                <div className="text-2xl text-amber-glow mb-3">&#9790;</div>
+                <BookOpen size={24} className="text-amber-glow mb-3" />
                 <div className="text-sm font-bold font-display mb-1">Diario cosmico</div>
                 <div className="text-[10px] text-text-muted font-ui">Scrivi e rifletti</div>
               </div>
@@ -579,7 +584,7 @@ export default function OggiPage() {
               <div className="space-y-2">
                 {profile.strengths?.slice(0, 3).map((s, i) => (
                   <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
-                    <span className="text-amber shrink-0">&#9670;</span><span>{s}</span>
+                    <Diamond size={10} className="text-amber shrink-0" /><span>{s}</span>
                   </div>
                 ))}
               </div>
@@ -589,7 +594,7 @@ export default function OggiPage() {
               <div className="space-y-2">
                 {profile.shadows?.slice(0, 3).map((s, i) => (
                   <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
-                    <span className="text-sienna shrink-0">&#9681;</span><span>{s}</span>
+                    <Eye size={10} className="text-sienna shrink-0" /><span>{s}</span>
                   </div>
                 ))}
               </div>

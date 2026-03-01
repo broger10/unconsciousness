@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sparkle } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -68,9 +69,9 @@ export function SanctumWelcome() {
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", delay: 0.4, stiffness: 150 }}
-              className="text-6xl text-amber mb-8"
+              className="mb-8 flex justify-center"
             >
-              &#10038;
+              <Sparkle size={48} className="text-amber" />
             </motion.div>
 
             <motion.h1
@@ -98,7 +99,7 @@ export function SanctumWelcome() {
               onClick={dismiss}
               className="px-8 py-3.5 rounded-xl bg-amber text-bg-base text-sm font-bold font-ui dimensional hover:glow transition-all"
             >
-              Inizia il viaggio &#10038;
+              Inizia il viaggio
             </motion.button>
           </motion.div>
         </motion.div>

@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+import {
+  Circle, CircleDashed, CircleDot, Diamond, Sparkles, Sparkle,
+  Moon, ArrowRight, type LucideIcon,
+} from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -32,12 +37,12 @@ const moodLabels: Record<number, string> = {
   5: "Radiante",
 };
 
-const moodSymbols: Record<number, string> = {
-  1: "&#9676;",
-  2: "&#9681;",
-  3: "&#9672;",
-  4: "&#9670;",
-  5: "&#10038;",
+const moodIcons: Record<number, LucideIcon> = {
+  1: Circle,
+  2: CircleDashed,
+  3: CircleDot,
+  4: Diamond,
+  5: Sparkles,
 };
 
 const dailyPhrases = [
@@ -81,6 +86,7 @@ function getDailyPhrase(): string {
 }
 
 export default function DiarioPage() {
+  const searchParams = useSearchParams();
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [checkins, setCheckins] = useState<CheckinEntry[]>([]);
   const [newEntry, setNewEntry] = useState("");
@@ -91,9 +97,15 @@ export default function DiarioPage() {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [streak, setStreak] = useState(0);
 
+  // Pre-fill textarea from ?prompt= param (e.g. from Il Filo)
+  useEffect(() => {
+    const prompt = searchParams.get("prompt");
+    if (prompt) setNewEntry(prompt);
+  }, [searchParams]);
+
   useEffect(() => {
     Promise.all([
-      fetch("/api/journal").then((r) => r.json()),
+      fetch("/api/journal").then((r) => r.json()).catch(() => ({ journals: [] })),
       fetch("/api/checkin").then((r) => r.json()).catch(() => ({ checkins: [], streak: 0 })),
     ])
       .then(([journalData, checkinData]) => {
@@ -165,7 +177,7 @@ export default function DiarioPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <div className="text-4xl text-amber ember-pulse mb-4">&#9790;</div>
+          <Moon size={36} className="text-amber ember-pulse mb-4 mx-auto" />
           <p className="text-text-muted text-sm font-ui">Apro il diario...</p>
         </motion.div>
       </div>
@@ -186,7 +198,7 @@ export default function DiarioPage() {
             <h1 className="text-2xl font-bold font-display">Diario Cosmico</h1>
             {streak > 0 && (
               <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-                <span className="text-amber text-xs ember-pulse">&#9670;</span>
+                <Diamond size={12} className="text-amber ember-pulse" />
                 <span className="text-amber text-xs font-bold font-ui">{streak} {streak === 1 ? "giorno" : "giorni"}</span>
               </span>
             )}
@@ -201,7 +213,7 @@ export default function DiarioPage() {
           transition={{ delay: 0.05, ease: premium }}
           className="glass rounded-2xl p-5 mb-5 dimensional border border-amber/5"
         >
-          <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-3">&#9790; SCRIVI</div>
+          <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-3"><Moon size={10} className="inline" /> SCRIVI</div>
           <textarea
             value={newEntry}
             onChange={(e) => setNewEntry(e.target.value)}
@@ -228,7 +240,7 @@ export default function DiarioPage() {
                   Rivelo...
                 </span>
               ) : (
-                "◆ Rivela"
+                <span className="flex items-center gap-1.5"><Diamond size={10} className="inline" /> Rivela</span>
               )}
             </button>
           </div>
@@ -281,7 +293,7 @@ export default function DiarioPage() {
                           className="glass rounded-xl p-4"
                         >
                           <div className="flex items-start gap-2 mb-2">
-                            <span className="text-amber text-xs shrink-0 mt-0.5">&#9790;</span>
+                            <Moon size={12} className="text-amber shrink-0 mt-0.5" />
                             {j.content.length > 80 && !expandedEntries.has(j.id) ? (
                               <p
                                 className="text-sm text-text-primary font-body leading-relaxed cursor-pointer"
@@ -297,9 +309,9 @@ export default function DiarioPage() {
                             <>
                               <button
                                 onClick={() => setExpandedReflection(isExpanded ? null : j.id)}
-                                className="text-[10px] text-verdigris font-ui tracking-wide mt-2 mb-1"
+                                className="text-[10px] text-verdigris font-ui tracking-wide mt-2 mb-1 flex items-center gap-1"
                               >
-                                {isExpanded ? "◆ Chiudi riflessione" : "◆ Riflessione cosmica"}
+                                <Diamond size={8} className="inline" /> {isExpanded ? "Chiudi riflessione" : "Riflessione cosmica"}
                               </button>
                               <AnimatePresence>
                                 {isExpanded && (
@@ -328,6 +340,7 @@ export default function DiarioPage() {
                       );
                     } else {
                       const c = item.data as CheckinEntry;
+                      const MoodIcon = moodIcons[c.mood] || CircleDot;
                       return (
                         <motion.div
                           key={c.id}
@@ -336,10 +349,9 @@ export default function DiarioPage() {
                           transition={{ ease: premium }}
                           className="glass rounded-xl p-4 flex items-center gap-3"
                         >
-                          <span
-                            className={`text-xl ${c.mood >= 4 ? "text-amber" : c.mood >= 3 ? "text-text-muted" : "text-sienna"}`}
-                            dangerouslySetInnerHTML={{ __html: moodSymbols[c.mood] || "&#9672;" }}
-                          />
+                          <span className={`${c.mood >= 4 ? "text-amber" : c.mood >= 3 ? "text-text-muted" : "text-sienna"}`}>
+                            <MoodIcon size={20} />
+                          </span>
                           <div className="flex-1">
                             <div className="text-sm font-display font-bold">{moodLabels[c.mood] || "Check-in"}</div>
                             <div className="text-[10px] text-text-muted font-ui">
@@ -348,7 +360,7 @@ export default function DiarioPage() {
                             </div>
                           </div>
                           {c.aiInsight && (
-                            <span className="text-[10px] text-verdigris font-ui">&#9670;</span>
+                            <Diamond size={10} className="text-verdigris" />
                           )}
                         </motion.div>
                       );
@@ -367,14 +379,14 @@ export default function DiarioPage() {
             className="block glass rounded-xl p-5 border border-amber/10 transition-all duration-300 hover:border-amber/20 mb-6"
           >
             <div className="flex items-center gap-3">
-              <span className="text-amber text-xl filo-pulse">&#10038;</span>
+              <Sparkle size={20} className="text-amber filo-pulse" />
               <div className="flex-1">
                 <div className="text-sm font-display font-bold">Il Filo</div>
                 <div className="text-xs text-text-muted font-body italic">
                   Scopri i pattern nascosti nelle tue riflessioni
                 </div>
               </div>
-              <span className="text-text-muted text-xs">&#8594;</span>
+              <ArrowRight size={12} className="text-text-muted" />
             </div>
           </Link>
         )}
@@ -386,8 +398,8 @@ export default function DiarioPage() {
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
-            <div className="text-4xl text-text-muted mb-4">&#9790;</div>
-            <p className="text-text-muted font-body italic">Il tuo diario cosmico &egrave; vuoto.<br />Inizia a scrivere per scoprire i tuoi pattern.</p>
+            <Moon size={36} className="text-text-muted mb-4 mx-auto" />
+            <p className="text-text-muted font-body italic">Il tuo diario cosmico è vuoto.<br />Inizia a scrivere per scoprire i tuoi pattern.</p>
           </motion.div>
         )}
       </div>

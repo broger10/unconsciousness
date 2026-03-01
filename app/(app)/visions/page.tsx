@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import { decodeHtmlEntities } from "@/lib/utils";
+import { Compass, CircleAlert, Diamond, Flame, Droplets, Star, ArrowRight } from "lucide-react";
 
 interface Vision {
   title: string;
@@ -21,6 +22,12 @@ const arcColors: Record<string, { border: string; text: string; bg: string }> = 
   FUOCO: { border: "border-sienna/20", text: "text-sienna", bg: "from-sienna/8 to-amber/5" },
   ACQUA: { border: "border-verdigris/20", text: "text-verdigris", bg: "from-verdigris/8 to-verdigris-dim/5" },
   STELLA: { border: "border-amber/20", text: "text-amber", bg: "from-amber/8 to-amber-glow/5" },
+};
+
+const arcIcons: Record<string, { Icon: typeof Flame; label: string }> = {
+  FUOCO: { Icon: Flame, label: "La Via del Fuoco" },
+  ACQUA: { Icon: Droplets, label: "La Via dell'Acqua" },
+  STELLA: { Icon: Star, label: "La Via della Stella" },
 };
 
 export default function VisionsPage() {
@@ -54,7 +61,7 @@ export default function VisionsPage() {
       <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
       <div className="max-w-4xl mx-auto relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <div className="text-4xl mb-4 text-verdigris">&#9672;</div>
+          <Compass size={36} className="text-verdigris mb-4 mx-auto" />
           <h1 className="text-3xl md:text-4xl font-bold font-display mb-3"><span className="text-gradient">Tre Visioni del Destino</span></h1>
           <p className="text-text-secondary max-w-xl mx-auto font-body text-lg italic">
             Descrivi una decisione, un obiettivo, un&apos;area della tua vita.
@@ -74,7 +81,7 @@ export default function VisionsPage() {
         {error && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
             <div className="glass rounded-2xl p-6 max-w-md mx-auto border border-sienna/20">
-              <div className="text-2xl text-sienna mb-3">&#9681;</div>
+              <CircleAlert size={24} className="text-sienna mb-3 mx-auto" />
               <p className="text-sm text-sienna font-ui">{error}</p>
             </div>
           </motion.div>
@@ -82,7 +89,7 @@ export default function VisionsPage() {
 
         {loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
-            <div className="text-5xl text-amber ember-pulse mb-4">&#9670;</div>
+            <Diamond size={40} className="text-amber ember-pulse mb-4 mx-auto" />
             <p className="text-text-secondary font-body italic text-lg">L&apos;AI sta consultando il tuo cielo...</p>
           </motion.div>
         )}
@@ -92,6 +99,7 @@ export default function VisionsPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               {visions.map((v, i) => {
                 const c = arcColors[v.archetype] || arcColors.STELLA;
+                const arc = arcIcons[v.archetype] || arcIcons.STELLA;
                 const open = expanded === i;
                 return (
                   <motion.div key={i} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.2 }}
@@ -100,11 +108,15 @@ export default function VisionsPage() {
                       <div className="flex items-start gap-4">
                         <div className="text-4xl">{v.emoji}</div>
                         <div className="flex-1">
-                          <div className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-1`}>
-                            {v.archetype === "FUOCO" ? "&#9632; La Via del Fuoco" : v.archetype === "ACQUA" ? "&#9632; La Via dell'Acqua" : "&#9632; La Via della Stella"}
+                          <div className={`flex items-center gap-1.5 text-xs font-bold font-ui tracking-wider ${c.text} mb-1`}>
+                            <arc.Icon size={12} /> {arc.label}
                           </div>
                           <h3 className="text-xl font-bold font-display">{decodeHtmlEntities(v.title)}</h3>
-                          {!open && <p className="text-text-muted text-sm mt-2 font-ui">Tocca per esplorare &#8594;</p>}
+                          {!open && (
+                            <p className="flex items-center gap-1 text-text-muted text-sm mt-2 font-ui">
+                              Tocca per esplorare <ArrowRight size={12} />
+                            </p>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -127,12 +139,14 @@ export default function VisionsPage() {
                               </div>
                             </div>
                             <div className="glass rounded-xl p-6">
-                              <h4 className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-2`}>PERCHÉ LE STELLE DICONO QUESTO</h4>
+                              <h4 className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-2`}>PERCH&Eacute; LE STELLE DICONO QUESTO</h4>
                               <p className="text-text-muted text-sm leading-relaxed font-body">{decodeHtmlEntities(v.reasoning)}</p>
                             </div>
                             {v.cosmicAlignment && (
                               <div className="text-center glass rounded-xl p-4">
-                                <span className="text-xs text-amber font-ui">&#9670; {decodeHtmlEntities(v.cosmicAlignment)}</span>
+                                <span className="flex items-center justify-center gap-1.5 text-xs text-amber font-ui">
+                                  <Diamond size={10} /> {decodeHtmlEntities(v.cosmicAlignment)}
+                                </span>
                               </div>
                             )}
                           </div>

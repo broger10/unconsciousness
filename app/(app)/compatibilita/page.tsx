@@ -6,6 +6,7 @@ import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { decodeHtmlEntities } from "@/lib/utils";
 import { CompatShareCard } from "@/components/share-card";
 import { shareCardAsImage } from "@/lib/share";
+import { Sparkle, Sun, Share, ChevronUp, ChevronDown } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -39,7 +40,6 @@ export default function CompatibilitaPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
-  const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/compatibility")
@@ -128,8 +128,8 @@ export default function CompatibilitaPage() {
           transition={{ ease: premium }}
           className="text-center mb-6"
         >
-          <div className="text-4xl text-amber mb-3 breathe">&#10038;</div>
-          <h1 className="text-2xl font-bold font-display mb-1">Compatibilità Cosmica</h1>
+          <Sparkle size={36} className="text-amber mb-3 breathe mx-auto" />
+          <h1 className="text-2xl font-bold font-display mb-1">Compatibilit&agrave; Cosmica</h1>
           <p className="text-text-muted text-sm font-body italic">Scopri la danza tra due anime</p>
         </motion.div>
 
@@ -223,7 +223,9 @@ export default function CompatibilitaPage() {
                 <span className="ml-2">Le stelle si confrontano...</span>
               </span>
             ) : (
-              "Rivela la connessione ✦"
+              <span className="flex items-center justify-center gap-1.5">
+                Rivela la connessione <Sparkle size={14} />
+              </span>
             )}
           </button>
         </motion.div>
@@ -249,20 +251,20 @@ export default function CompatibilitaPage() {
               transition={{ ease: premium }}
               className="glass rounded-2xl p-6 mb-5 dimensional glow border border-amber/10"
             >
-              <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">
-                ✦ COMPATIBILITÀ COSMICA
+              <div className="flex items-center gap-1.5 text-[10px] text-amber font-ui tracking-[0.2em] mb-4">
+                <Sparkle size={10} /> COMPATIBILIT&Agrave; COSMICA
               </div>
 
               {/* Signs */}
               <div className="flex items-center justify-center gap-4 mb-5">
                 <div className="text-center">
-                  <div className="text-2xl text-amber mb-1">☉</div>
+                  <Sun size={24} className="text-amber mb-1 mx-auto" />
                   <div className="text-sm font-bold font-display">{result.person1Sun}</div>
                   <div className="text-[10px] text-text-muted font-ui">Tu</div>
                 </div>
-                <div className="text-amber text-lg">✦</div>
+                <Sparkle size={18} className="text-amber" />
                 <div className="text-center">
-                  <div className="text-2xl text-verdigris mb-1">☉</div>
+                  <Sun size={24} className="text-verdigris mb-1 mx-auto" />
                   <div className="text-sm font-bold font-display">{result.person2Sun}</div>
                   <div className="text-[10px] text-text-muted font-ui">{name || "L'altra persona"}</div>
                 </div>
@@ -292,13 +294,9 @@ export default function CompatibilitaPage() {
                 {sharing ? (
                   <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
+                  <Share size={14} />
                 )}
-                Condividi nelle stories ✦
+                Condividi nelle stories
               </button>
 
               {/* Hidden share card for image generation */}
@@ -325,9 +323,9 @@ export default function CompatibilitaPage() {
           >
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-3 px-1 hover:text-amber transition-colors"
+              className="flex items-center gap-1 text-[10px] text-text-muted font-ui tracking-[0.2em] mb-3 px-1 hover:text-amber transition-colors"
             >
-              ULTIME COMPATIBILITÀ ({history.length}) {showHistory ? "▲" : "▼"}
+              ULTIME COMPATIBILIT&Agrave; ({history.length}) {showHistory ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
 
             <AnimatePresence>
@@ -344,8 +342,8 @@ export default function CompatibilitaPage() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-bold font-display">
                           {item.person2Name || "Persona"}{" "}
-                          <span className="text-amber text-xs font-ui">
-                            ☉ {(item.person2ChartData as { sunSign?: string } | null)?.sunSign || "?"}
+                          <span className="inline-flex items-center gap-1 text-amber text-xs font-ui">
+                            <Sun size={10} /> {(item.person2ChartData as { sunSign?: string } | null)?.sunSign || "?"}
                           </span>
                         </span>
                         <span className="text-[10px] text-text-muted font-ui">

@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  const [profile, user, subscription] = await Promise.all([
+  const [profile, user, subscription, checkinCount, journalCount] = await Promise.all([
     db.profile.findUnique({ where: { userId: session.user.id } }),
     db.user.findUnique({
       where: { id: session.user.id },
@@ -18,11 +18,14 @@ export async function GET() {
       where: { userId: session.user.id },
       select: { status: true },
     }),
+    db.dailyCheckin.count({ where: { userId: session.user.id } }),
+    db.journal.count({ where: { userId: session.user.id } }),
   ]);
 
   return NextResponse.json({
     profile,
     user,
     isPremium: subscription?.status === "active",
+    stats: { checkins: checkinCount, journals: journalCount },
   });
 }

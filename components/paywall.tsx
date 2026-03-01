@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { signOut } from "next-auth/react";
+import { Sparkle, Diamond, Moon, Gem } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -41,9 +42,9 @@ export function Paywall({ userName }: { userName?: string }) {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", delay: 0.1, stiffness: 150 }}
-            className="text-5xl mb-6 text-amber breathe"
+            className="mb-6 flex justify-center"
           >
-            &#10038;
+            <Sparkle size={40} className="text-amber breathe" />
           </motion.div>
           <h1 className="text-2xl font-bold font-display mb-3">
             {userName ? `${userName}, entra` : "Entra"} nel Sanctum
@@ -57,28 +58,28 @@ export function Paywall({ userName }: { userName?: string }) {
         <div className="glass rounded-2xl p-5 mb-6 border border-amber/10">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <span className="text-amber shrink-0 mt-0.5">&#10038;</span>
+              <Sparkle size={14} className="text-amber shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-display font-bold">L&apos;oracolo che ti conosce</div>
                 <div className="text-xs text-text-muted font-ui">Chat illimitata con un&apos;intelligenza che legge le tue stelle.</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-verdigris shrink-0 mt-0.5">&#9670;</span>
+              <Diamond size={14} className="text-verdigris shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-display font-bold">La mappa delle tue ombre</div>
                 <div className="text-xs text-text-muted font-ui">Esplora le parti di te che non hai ancora incontrato.</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-sienna shrink-0 mt-0.5">&#9790;</span>
+              <Moon size={14} className="text-sienna shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-display font-bold">Visioni che anticipano il tuo futuro</div>
                 <div className="text-xs text-text-muted font-ui">Tre scenari cosmici per ogni decisione importante.</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-amber-glow shrink-0 mt-0.5">&#9672;</span>
+              <Gem size={14} className="text-amber-glow shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-display font-bold">Un diario che ti riflette</div>
                 <div className="text-xs text-text-muted font-ui">Scrivi e l&apos;AI ti mostra i pattern nascosti.</div>

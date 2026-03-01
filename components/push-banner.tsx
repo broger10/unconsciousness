@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sparkle } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -83,7 +84,7 @@ export function PushBanner() {
         className="glass rounded-2xl p-4 mb-5 dimensional border border-amber/10"
       >
         <div className="flex items-start gap-3">
-          <span className="text-amber text-lg shrink-0 ember-pulse">✦</span>
+          <Sparkle size={18} className="text-amber shrink-0 ember-pulse" />
           <div className="flex-1">
             <p className="text-sm font-bold font-display text-text-primary mb-0.5">
               Ricevi il tuo cielo ogni mattina

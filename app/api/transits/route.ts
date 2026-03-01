@@ -94,11 +94,11 @@ export async function GET() {
 
     transitsWithInsights.push({
       transitPlanet: transit.transitPlanet,
-      transitSymbol: PLANET_SYMBOLS[transit.transitPlanet] || "★",
+      transitSymbol: PLANET_SYMBOLS[transit.transitPlanet] || "",
       aspect: transit.aspect,
-      aspectSymbol: ASPECTS[transit.aspect]?.symbol || "•",
+      aspectSymbol: ASPECTS[transit.aspect]?.symbol || "",
       natalPlanet: transit.natalPlanet,
-      natalSymbol: PLANET_SYMBOLS[transit.natalPlanet] || "★",
+      natalSymbol: PLANET_SYMBOLS[transit.natalPlanet] || "",
       description: transit.description,
       interpretation,
     });

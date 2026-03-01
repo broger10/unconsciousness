@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, type ReactNode } from "react";
+import { Sun, Moon, ArrowUp, Sparkle, MoonStar } from "lucide-react";
 
 // ─── Frase del Giorno Card ──────────────────────────
 export interface FraseCardProps {
@@ -85,26 +86,16 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
               marginBottom: 80,
             }}
           >
-            <SignBadge symbol="☉" label="Sole" sign={sunSign} />
-            <span style={{ color: "rgba(201,168,76,0.25)", fontSize: 16 }}>
-              ✦
-            </span>
-            <SignBadge symbol="☽" label="Luna" sign={moonSign} />
-            <span style={{ color: "rgba(201,168,76,0.25)", fontSize: 16 }}>
-              ✦
-            </span>
-            <SignBadge symbol="↑" label="Asc" sign={risingSign} />
+            <SignBadge symbol={<Sun size={22} />} label="Sole" sign={sunSign} />
+            <Sparkle size={16} style={{ color: "rgba(201,168,76,0.25)" }} />
+            <SignBadge symbol={<Moon size={22} />} label="Luna" sign={moonSign} />
+            <Sparkle size={16} style={{ color: "rgba(201,168,76,0.25)" }} />
+            <SignBadge symbol={<ArrowUp size={22} />} label="Asc" sign={risingSign} />
           </div>
 
           {/* Upper ornament */}
-          <div
-            style={{
-              color: "rgba(201,168,76,0.35)",
-              fontSize: 28,
-              marginBottom: 60,
-            }}
-          >
-            ✦
+          <div style={{ marginBottom: 60 }}>
+            <Sparkle size={28} style={{ color: "rgba(201,168,76,0.35)" }} />
           </div>
 
           {/* The phrase */}
@@ -122,14 +113,8 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
           </p>
 
           {/* Lower ornament */}
-          <div
-            style={{
-              color: "rgba(201,168,76,0.35)",
-              fontSize: 28,
-              marginTop: 60,
-            }}
-          >
-            ✦
+          <div style={{ marginTop: 60 }}>
+            <Sparkle size={28} style={{ color: "rgba(201,168,76,0.35)" }} />
           </div>
         </div>
 
@@ -244,7 +229,7 @@ export const CompatShareCard = forwardRef<HTMLDivElement, CompatCardProps>(
               marginBottom: 64,
             }}
           >
-            Compatibilità cosmica
+            Compatibilit&agrave; cosmica
           </p>
 
           {/* Two people */}
@@ -257,14 +242,9 @@ export const CompatShareCard = forwardRef<HTMLDivElement, CompatCardProps>(
             }}
           >
             <div style={{ textAlign: "center" }}>
-              <p
-                style={{
-                  fontSize: 48,
-                  marginBottom: 8,
-                }}
-              >
-                {ZODIAC_EMOJI[person1Sun] || "☉"}
-              </p>
+              <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>
+                <Sun size={48} color="#C9A84C" />
+              </div>
               <p
                 style={{
                   fontSize: 30,
@@ -286,19 +266,12 @@ export const CompatShareCard = forwardRef<HTMLDivElement, CompatCardProps>(
               </p>
             </div>
 
-            <span
-              style={{
-                fontSize: 36,
-                color: "rgba(201,168,76,0.3)",
-              }}
-            >
-              ✦
-            </span>
+            <Sparkle size={36} style={{ color: "rgba(201,168,76,0.3)" }} />
 
             <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 48, marginBottom: 8 }}>
-                {ZODIAC_EMOJI[person2Sun] || "☉"}
-              </p>
+              <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>
+                <Sun size={48} color="#4A9B8E" />
+              </div>
               <p
                 style={{
                   fontSize: 30,
@@ -430,9 +403,12 @@ export const TransitShareCard = forwardRef<HTMLDivElement, TransitCardProps>(
           }}
         >
           {/* Moon icon */}
-          <p style={{ fontSize: 80, marginBottom: 40 }}>
-            {isNewMoon ? "🌑" : "🌕"}
-          </p>
+          <div style={{ marginBottom: 40, display: "flex", justifyContent: "center" }}>
+            {isNewMoon
+              ? <MoonStar size={80} color="#4A9B8E" />
+              : <Moon size={80} fill="#D4B87A" color="#D4B87A" />
+            }
+          </div>
 
           {/* Event name */}
           <p
@@ -457,7 +433,7 @@ export const TransitShareCard = forwardRef<HTMLDivElement, TransitCardProps>(
               marginBottom: 64,
             }}
           >
-            in {eventSign} {ZODIAC_EMOJI[eventSign] || ""}
+            in {eventSign}
           </p>
 
           {/* Ornament */}
@@ -478,15 +454,19 @@ export const TransitShareCard = forwardRef<HTMLDivElement, TransitCardProps>(
           </p>
 
           {/* User sign context */}
-          <p
+          <div
             style={{
               fontFamily: "'Syne', system-ui, sans-serif",
               fontSize: 22,
               color: "rgba(139,175,141,0.7)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            ☉ {userSunSign}
-          </p>
+            <Sun size={22} />
+            {userSunSign}
+          </div>
         </div>
 
         {/* Bottom branding */}
@@ -524,22 +504,23 @@ function SignBadge({
   label,
   sign,
 }: {
-  symbol: string;
+  symbol: ReactNode;
   label: string;
   sign: string;
 }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <p
+      <div
         style={{
           fontFamily: "'Syne', system-ui, sans-serif",
-          fontSize: 22,
           color: "rgba(139,175,141,0.7)",
           marginBottom: 4,
+          display: "flex",
+          justifyContent: "center",
         }}
       >
         {symbol}
-      </p>
+      </div>
       <p
         style={{
           fontFamily: "'Syne', system-ui, sans-serif",
@@ -597,9 +578,3 @@ function StarField() {
     </div>
   );
 }
-
-const ZODIAC_EMOJI: Record<string, string> = {
-  Ariete: "♈", Toro: "♉", Gemelli: "♊", Cancro: "♋",
-  Leone: "♌", Vergine: "♍", Bilancia: "♎", Scorpione: "♏",
-  Sagittario: "♐", Capricorno: "♑", Acquario: "♒", Pesci: "♓",
-};

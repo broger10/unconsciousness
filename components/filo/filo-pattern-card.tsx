@@ -1,5 +1,6 @@
 import type { FiloPattern } from "@/lib/types/filo";
 import { decodeHtmlEntities } from "@/lib/utils";
+import { Sparkle } from "lucide-react";
 
 interface FiloPatternCardProps {
   pattern: FiloPattern;
@@ -11,7 +12,7 @@ export function FiloPatternCard({ pattern, onAskQuestion, locked }: FiloPatternC
   return (
     <div className={`glass rounded-xl p-5 border border-amber/10 transition-all duration-300 hover:border-amber/20 ${locked ? "curiosity-blur pointer-events-none" : ""}`}>
       <div className="flex items-start gap-3 mb-2">
-        <span className="text-amber text-sm shrink-0 mt-0.5">&#10038;</span>
+        <Sparkle size={14} className="text-amber shrink-0 mt-0.5" />
         <div>
           <h3 className="text-base font-bold font-display">{decodeHtmlEntities(pattern.titolo)}</h3>
           {pattern.aspettoAstrale && (
@@ -46,9 +47,9 @@ export function FiloPatternCard({ pattern, onAskQuestion, locked }: FiloPatternC
       <div className="pl-6">
         <button
           onClick={() => onAskQuestion(pattern.domanda)}
-          className="text-xs font-ui text-amber transition-colors duration-200 hover:text-amber-glow"
+          className="flex items-center gap-1 text-xs font-ui text-amber transition-colors duration-200 hover:text-amber-glow"
         >
-          Approfondisci nel diario &#10038;
+          Approfondisci nel diario <Sparkle size={10} />
         </button>
       </div>
     </div>

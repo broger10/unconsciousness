@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { UnLogo } from "@/components/un-logo";
 import { SanctumWelcome } from "@/components/sanctum-welcome";
 import Link from "next/link";
+import { Diamond, Sparkle, Sun, Moon, ArrowUp, Sparkles, Compass, Eye, BookOpen, ArrowLeft, type LucideIcon } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -63,18 +64,13 @@ export default function ProfiloPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/profile").then((r) => r.json()),
-      fetch("/api/checkin").then((r) => r.json()).catch(() => ({ checkins: [], streak: 0 })),
-      fetch("/api/journal").then((r) => r.json()).catch(() => ({ journals: [] })),
       fetch("/api/stripe/status").then((r) => r.json()).catch(() => null),
       fetch("/api/credits").then((r) => r.json()).catch(() => null),
     ])
-      .then(([profileData, checkinData, journalData, subData, creditsData]) => {
+      .then(([profileData, subData, creditsData]) => {
         if (profileData.profile) setProfile(profileData.profile);
         if (profileData.user) setUser(profileData.user);
-        setStats({
-          checkins: checkinData.checkins?.length || 0,
-          journals: journalData.journals?.length || 0,
-        });
+        if (profileData.stats) setStats(profileData.stats);
         if (subData) setSub(subData);
         if (creditsData?.credits !== undefined) setCredits(creditsData.credits);
         setLoading(false);
@@ -115,7 +111,7 @@ export default function ProfiloPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <div className="text-4xl text-amber ember-pulse mb-4">&#9681;</div>
+          <Diamond size={36} className="text-amber ember-pulse mb-4" />
           <p className="text-text-muted text-sm font-ui">Carico il tuo profilo...</p>
         </motion.div>
       </div>
@@ -131,9 +127,7 @@ export default function ProfiloPage() {
 
   return (
     <div className="min-h-screen relative">
-      <Suspense fallback={null}>
-        <SanctumWelcome />
-      </Suspense>
+      <SanctumWelcome />
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
         {/* Identity Card */}
         <motion.div
@@ -151,7 +145,7 @@ export default function ProfiloPage() {
               />
             ) : (
               <div className="w-14 h-14 rounded-2xl bg-bg-surface border-2 border-amber/20 flex items-center justify-center">
-                <span className="text-2xl text-amber">&#9670;</span>
+                <Diamond size={24} className="text-amber" />
               </div>
             )}
             <div>
@@ -159,22 +153,22 @@ export default function ProfiloPage() {
                 <h1 className="text-2xl font-bold font-display">{user?.name || "Viaggiatore"}</h1>
                 {sub?.isPremium && (
                   <span className="oracle-badge text-[9px] font-ui text-amber px-2.5 py-1 rounded-full glass border border-amber/15 tracking-[0.15em]">
-                    ◆ MEMBRO DEL SANCTUM
+                    <Diamond size={8} className="inline" /> MEMBRO DEL SANCTUM
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-text-muted font-ui">
-                {profile?.sunSign && <span>&#9788; {profile.sunSign}</span>}
+                {profile?.sunSign && <span><Sun size={12} className="inline" /> {profile.sunSign}</span>}
                 {profile?.moonSign && (
                   <>
-                    <span className="text-border-light">&#183;</span>
-                    <span>&#9790; {profile.moonSign}</span>
+                    <span className="text-border-light">·</span>
+                    <span><Moon size={12} className="inline" /> {profile.moonSign}</span>
                   </>
                 )}
                 {profile?.risingSign && (
                   <>
-                    <span className="text-border-light">&#183;</span>
-                    <span>&#8593; {profile.risingSign}</span>
+                    <span className="text-border-light">·</span>
+                    <span><ArrowUp size={12} className="inline" /> {profile.risingSign}</span>
                   </>
                 )}
               </div>
@@ -185,7 +179,7 @@ export default function ProfiloPage() {
           <div className="bg-bg-surface rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-amber">&#9670;</span>
+                <Diamond size={14} className="text-amber" />
                 <span className="text-sm font-bold font-display">{level.name}</span>
               </div>
               <span className="text-xs text-amber font-ui font-bold">{awareness}%</span>
@@ -244,7 +238,7 @@ export default function ProfiloPage() {
             className="glass rounded-2xl p-5 mb-5 dimensional border border-verdigris/10"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] text-verdigris font-ui tracking-[0.2em]">&#10038; I TUOI CREDITI</div>
+              <div className="text-[10px] text-verdigris font-ui tracking-[0.2em]"><Sparkle size={10} className="inline" /> I TUOI CREDITI</div>
               <span className="text-xl font-bold font-display text-verdigris">{user?.credits ?? 0}</span>
             </div>
             <p className="text-xs text-text-muted font-ui mb-3">
@@ -302,13 +296,13 @@ export default function ProfiloPage() {
           }`}
         >
           <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">
-            {sub?.isPremium ? "&#10038; MEMBRO DEL SANCTUM" : "IL TUO PIANO"}
+            {sub?.isPremium ? <><Sparkle size={10} className="inline" /> MEMBRO DEL SANCTUM</> : "IL TUO PIANO"}
           </div>
 
           {sub?.isPremium ? (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-amber text-lg">&#10038;</span>
+                <Sparkle size={18} className="text-amber" />
                 <span className="text-base font-bold font-display">
                   Oracolo del Sanctum
                 </span>
@@ -327,7 +321,7 @@ export default function ProfiloPage() {
                 onClick={handleManage}
                 className="mt-3 text-xs text-amber font-ui hover:underline"
               >
-                Gestisci abbonamento &#8594;
+                Gestisci abbonamento →
               </button>
             </div>
           ) : (
@@ -355,10 +349,10 @@ export default function ProfiloPage() {
                 </button>
               </div>
               <div className="space-y-1.5 text-[10px] text-text-muted font-ui">
-                <div className="flex items-center gap-1.5"><span className="text-amber">&#9670;</span> Oracolo AI illimitato</div>
-                <div className="flex items-center gap-1.5"><span className="text-amber">&#9670;</span> Mappa dell&apos;ombra completa</div>
-                <div className="flex items-center gap-1.5"><span className="text-amber">&#9670;</span> Visioni del destino</div>
-                <div className="flex items-center gap-1.5"><span className="text-amber">&#9670;</span> Riflessioni AI sul diario</div>
+                <div className="flex items-center gap-1.5"><Diamond size={10} className="text-amber" /> Oracolo AI illimitato</div>
+                <div className="flex items-center gap-1.5"><Diamond size={10} className="text-amber" /> Mappa dell&apos;ombra completa</div>
+                <div className="flex items-center gap-1.5"><Diamond size={10} className="text-amber" /> Visioni del destino</div>
+                <div className="flex items-center gap-1.5"><Diamond size={10} className="text-amber" /> Riflessioni AI sul diario</div>
               </div>
             </div>
           )}
@@ -372,13 +366,13 @@ export default function ProfiloPage() {
             transition={{ delay: 0.19, ease: premium }}
             className="glass rounded-2xl p-5 mb-5 dimensional border border-amber/10"
           >
-            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">&#10038; IL SANCTUM</div>
+            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4"><Sparkle size={10} className="inline" /> IL SANCTUM</div>
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/compatibilita"
                 className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
               >
-                <span className="text-lg text-amber group-hover:scale-110 inline-block transition-transform">&#10038;</span>
+                <span className="text-lg text-amber group-hover:scale-110 inline-block transition-transform"><Sparkle size={18} /></span>
                 <div className="text-sm font-display font-bold mt-1">Compatibilit&agrave;</div>
                 <div className="text-[10px] text-text-muted font-ui">Illimitata</div>
               </Link>
@@ -386,7 +380,7 @@ export default function ProfiloPage() {
                 href="/visions"
                 className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
               >
-                <span className="text-lg text-verdigris group-hover:scale-110 inline-block transition-transform">&#9670;</span>
+                <span className="text-lg text-verdigris group-hover:scale-110 inline-block transition-transform"><Compass size={18} /></span>
                 <div className="text-sm font-display font-bold mt-1">Visioni</div>
                 <div className="text-[10px] text-text-muted font-ui">Del Destino</div>
               </Link>
@@ -394,7 +388,7 @@ export default function ProfiloPage() {
                 href="/diario"
                 className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
               >
-                <span className="text-lg text-sienna group-hover:scale-110 inline-block transition-transform">&#9790;</span>
+                <span className="text-lg text-sienna group-hover:scale-110 inline-block transition-transform"><BookOpen size={18} /></span>
                 <div className="text-sm font-display font-bold mt-1">Riflessioni</div>
                 <div className="text-[10px] text-text-muted font-ui">Cosmiche</div>
               </Link>
@@ -402,7 +396,7 @@ export default function ProfiloPage() {
                 href="/mappa"
                 className="glass rounded-xl p-4 border border-amber/15 hover:glow transition-all group"
               >
-                <span className="text-lg text-amber-glow group-hover:scale-110 inline-block transition-transform">&#9672;</span>
+                <span className="text-lg text-amber-glow group-hover:scale-110 inline-block transition-transform"><Eye size={18} /></span>
                 <div className="text-sm font-display font-bold mt-1">Mappa</div>
                 <div className="text-[10px] text-text-muted font-ui">Dell&apos;Ombra</div>
               </Link>
@@ -421,7 +415,7 @@ export default function ProfiloPage() {
             <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4">DATI DI NASCITA</div>
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-border/30">
-                <span className="text-xs text-text-muted font-ui">◆ Data</span>
+                <span className="text-xs text-text-muted font-ui"><Diamond size={8} className="inline" /> Data</span>
                 <span className="text-sm text-text-primary font-ui">
                   {(() => {
                     if (!profile.birthDate) return "—";
@@ -434,13 +428,13 @@ export default function ProfiloPage() {
               </div>
               {profile.birthTime && (
                 <div className="flex items-center justify-between py-2 border-b border-border/30">
-                  <span className="text-xs text-text-muted font-ui">◆ Ora</span>
+                  <span className="text-xs text-text-muted font-ui"><Diamond size={8} className="inline" /> Ora</span>
                   <span className="text-sm text-text-primary font-ui">{profile.birthTime}</span>
                 </div>
               )}
               {profile.birthCity && (
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-xs text-text-muted font-ui">◆ Luogo</span>
+                  <span className="text-xs text-text-muted font-ui"><Diamond size={8} className="inline" /> Luogo</span>
                   <span className="text-sm text-text-primary font-ui">{profile.birthCity}</span>
                 </div>
               )}
@@ -458,14 +452,14 @@ export default function ProfiloPage() {
           <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4">PRIVACY E DATI</div>
           <div className="space-y-3">
             <div className="flex items-center gap-3 py-2">
-              <span className="text-verdigris">&#9670;</span>
+              <Diamond size={14} className="text-verdigris" />
               <div>
                 <div className="text-sm font-display font-bold">I tuoi dati sono tuoi</div>
                 <div className="text-xs text-text-muted font-ui">Crittografia end-to-end. Zero vendita dati.</div>
               </div>
             </div>
             <div className="flex items-center gap-3 py-2">
-              <span className="text-verdigris">&#9670;</span>
+              <Diamond size={14} className="text-verdigris" />
               <div>
                 <div className="text-sm font-display font-bold">AI locale</div>
                 <div className="text-xs text-text-muted font-ui">Le tue conversazioni non vengono usate per addestrare modelli.</div>
@@ -485,7 +479,7 @@ export default function ProfiloPage() {
             onClick={() => signOut({ callbackUrl: "/" })}
             className="w-full glass rounded-xl p-4 text-center text-sienna text-sm font-ui hover:bg-sienna/10 transition-colors duration-300"
           >
-            ← Lascia il Sanctum
+            <ArrowLeft size={14} className="inline" /> Lascia il Sanctum
           </button>
         </motion.div>
 

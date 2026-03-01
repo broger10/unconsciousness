@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { UnLogo } from "@/components/un-logo";
+import { Diamond, ArrowLeft } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -22,7 +23,7 @@ export default function LoginPage() {
         {/* Back to home */}
         <div className="mb-8">
           <Link href="/" className="text-text-muted text-xs font-ui hover:text-text-secondary transition-colors flex items-center gap-1.5">
-            <span>&#8592;</span> Torna alla home
+            <ArrowLeft size={12} /> Torna alla home
           </Link>
         </div>
 
@@ -31,9 +32,9 @@ export default function LoginPage() {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", delay: 0.2, stiffness: 200 }}
-            className="text-5xl mb-6 text-amber breathe"
+            className="mb-6 flex justify-center"
           >
-            &#9670;
+            <Diamond size={40} className="text-amber breathe" />
           </motion.div>
           <h1 className="mb-2">
             <UnLogo size="lg" />
@@ -59,15 +60,15 @@ export default function LoginPage() {
 
           <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2 text-[10px] text-text-muted font-ui">
-              <span className="text-verdigris">&#9670;</span>
+              <Diamond size={10} className="text-verdigris" />
               <span>I tuoi dati restano solo tuoi. Sempre.</span>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-text-muted font-ui">
-              <span className="text-amber">&#9670;</span>
+              <Diamond size={10} className="text-amber" />
               <span>Zero tracking, zero pubblicit&agrave;.</span>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-text-muted font-ui">
-              <span className="text-sienna">&#9670;</span>
+              <Diamond size={10} className="text-sienna" />
               <span>20 crediti gratis alla registrazione.</span>
             </div>
           </div>

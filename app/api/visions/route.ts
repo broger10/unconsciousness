@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
             topic,
             versionNumber: i + 1,
             title: v.title,
-            emoji: v.emoji || "✨",
+            emoji: v.emoji || "",
             narrative: v.narrative,
             milestones: v.milestones,
             reasoning: v.reasoning,

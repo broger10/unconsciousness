@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
+import { Moon, Diamond, Eye, Sparkle, Sparkles, Send, type LucideIcon } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -14,11 +15,11 @@ interface Message {
   createdAt: string;
 }
 
-const suggestions = [
-  { text: "Come sarà il mio mese?", icon: "&#9790;" },
-  { text: "Perché mi sento così?", icon: "&#9670;" },
-  { text: "Cosa non sto vedendo?", icon: "&#9681;" },
-  { text: "Le mie sfide attuali", icon: "&#10038;" },
+const suggestions: { text: string; Icon: LucideIcon }[] = [
+  { text: "Come sarà il mio mese?", Icon: Moon },
+  { text: "Perché mi sento così?", Icon: Diamond },
+  { text: "Cosa non sto vedendo?", Icon: Eye },
+  { text: "Le mie sfide attuali", Icon: Sparkle },
 ];
 
 export default function ChiediPage() {
@@ -117,9 +118,9 @@ export default function ChiediPage() {
             <h1 className="text-2xl font-bold font-display">L&apos;Oracolo</h1>
             <Link
               href="/visions"
-              className="text-[10px] text-amber font-ui tracking-wide glass rounded-full px-3 py-1.5 hover:glow transition-all"
+              className="flex items-center gap-1 text-[10px] text-amber font-ui tracking-wide glass rounded-full px-3 py-1.5 hover:glow transition-all"
             >
-              &#10038; Tre Destini
+              <Sparkle size={10} /> Tre Destini
             </Link>
           </div>
           <p className="text-text-muted text-xs font-ui">Le stelle ascoltano. Chiedi ci&ograve; che il cuore vuole sapere.</p>
@@ -137,7 +138,7 @@ export default function ChiediPage() {
               transition={{ ease: premium }}
               className="flex flex-col items-center justify-center py-20"
             >
-              <div className="text-7xl text-amber mb-8 breathe">&#10038;</div>
+              <Sparkles size={56} className="text-amber mb-8 breathe" />
               <h2 className="text-headline text-text-primary mb-3">Le stelle ascoltano.</h2>
               <p className="text-text-secondary font-body italic text-base text-center mb-10 max-w-xs">
                 Ogni domanda che fai &egrave; un atto di coraggio cosmico.
@@ -149,7 +150,7 @@ export default function ChiediPage() {
                     onClick={() => send(s.text)}
                     className="glass rounded-2xl p-5 text-left hover:glow hover:border-amber/10 transition-all duration-300 group"
                   >
-                    <span className="text-amber text-lg group-hover:scale-110 inline-block transition-transform mb-2" dangerouslySetInnerHTML={{ __html: s.icon }} />
+                    <s.Icon size={18} className="text-amber group-hover:scale-110 transition-transform mb-2" />
                     <p className="text-sm text-text-secondary font-body">{s.text}</p>
                   </button>
                 ))}
@@ -160,7 +161,7 @@ export default function ChiediPage() {
           {/* Loading */}
           {loading && (
             <div className="flex items-center justify-center py-16">
-              <div className="text-4xl text-amber ember-pulse">&#10038;</div>
+              <Sparkles size={36} className="text-amber ember-pulse" />
             </div>
           )}
 
@@ -187,7 +188,7 @@ export default function ChiediPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%]">
                       <div className="flex items-start gap-2">
-                        <span className="text-amber text-sm shrink-0 mt-1">&#10038;</span>
+                        <Sparkle size={14} className="text-amber shrink-0 mt-1" />
                         <MarkdownText content={msg.content} className="text-sm text-text-secondary font-body italic leading-relaxed" />
                       </div>
                     </div>
@@ -218,9 +219,9 @@ export default function ChiediPage() {
                 <button
                   key={s.text}
                   onClick={() => send(s.text)}
-                  className="shrink-0 glass rounded-full px-3 py-1.5 text-[10px] text-text-muted font-ui hover:text-amber hover:border-amber/10 transition-all"
+                  className="shrink-0 flex items-center gap-1 glass rounded-full px-3 py-1.5 text-[10px] text-text-muted font-ui hover:text-amber hover:border-amber/10 transition-all"
                 >
-                  <span dangerouslySetInnerHTML={{ __html: s.icon }} /> {s.text}
+                  <s.Icon size={10} /> {s.text}
                 </button>
               ))}
             </motion.div>
@@ -251,7 +252,7 @@ export default function ChiediPage() {
                 : "bg-bg-surface text-text-muted border border-border/50"
             }`}
           >
-            <span className="text-sm">&#8593;</span>
+            <Send size={14} />
           </button>
         </div>
       </div>

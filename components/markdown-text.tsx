@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import { Diamond } from "lucide-react";
 import { decodeHtmlEntities } from "@/lib/utils";
 
 interface MarkdownTextProps {
@@ -42,7 +43,7 @@ export function MarkdownText({ content, className = "" }: MarkdownTextProps) {
           ),
           li: ({ children }) => (
             <li className="flex items-start gap-1.5">
-              <span className="text-amber shrink-0 mt-0.5">◆</span>
+              <Diamond size={8} className="text-amber shrink-0 mt-1" />
               <span>{children}</span>
             </li>
           ),

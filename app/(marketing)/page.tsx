@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Sun, Eye, Sparkle, Diamond, Moon, Compass, type LucideIcon } from "lucide-react";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -123,13 +124,13 @@ export default function LandingPage() {
             className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6 text-text-muted text-xs font-ui"
           >
             <span className="flex items-center gap-1.5">
-              <span className="text-verdigris">&#9670;</span> Zero tracking
+              <Diamond size={10} className="text-verdigris" /> Zero tracking
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="text-amber">&#9670;</span> 20 crediti gratis
+              <Diamond size={10} className="text-amber" /> 20 crediti gratis
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="text-sienna">&#9670;</span> Nessuna carta richiesta
+              <Diamond size={10} className="text-sienna" /> Nessuna carta richiesta
             </span>
           </motion.div>
         </motion.div>
@@ -201,7 +202,7 @@ export default function LandingPage() {
 
             {!demoSign && !demoLoading && (
               <div className="text-center py-8">
-                <span className="text-3xl text-text-muted/30">&#10038;</span>
+                <Sparkle size={30} className="text-text-muted/30 mx-auto" />
                 <p className="text-text-muted text-sm font-body mt-2 italic">Scegli un segno per ricevere il tuo messaggio</p>
               </div>
             )}
@@ -219,20 +220,22 @@ export default function LandingPage() {
             </h2>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: "&#9788;", c: "text-amber", bc: "border-amber/10 from-amber/6 to-verdigris/2", t: "Tema Natale AI", d: "10 pianeti decodificati. Non un elenco \u2014 una radiografia della tua anima scritta solo per te." },
-              { icon: "&#9681;", c: "text-sienna", bc: "border-sienna/10 from-sienna/6 to-amber/2", t: "Mappa dell'Ombra", d: "Le ferite junghiane nascoste nel tuo cielo. I punti ciechi che sabotano la tua vita." },
-              { icon: "&#10038;", c: "text-amber-glow", bc: "border-amber-glow/10 from-amber-glow/5 to-verdigris/2", t: "Oracolo AI", d: "Una chat con un'intelligenza che conosce il tuo cielo, il tuo umore, i tuoi pattern." },
-              { icon: "&#9670;", c: "text-amber", bc: "border-amber/10 from-amber/5 to-sienna/2", t: "Energia Cosmica", d: "Ogni giorno un punteggio unico basato sui transiti e il tuo tema natale. Sa come sar\u00e0 la tua giornata." },
-              { icon: "&#9790;", c: "text-verdigris", bc: "border-verdigris/10 from-verdigris/6 to-amber/2", t: "Diario Cosmico", d: "Scrivi. L'AI riflette ci\u00f2 che non vedi. Ogni entry rivela i tuoi pattern inconsci." },
-              { icon: "&#9672;", c: "text-verdigris", bc: "border-verdigris/10 from-verdigris/5 to-sienna/2", t: "Tre Visioni del Destino", d: "Tre futuri possibili costruiti sul tuo cielo con timeline astrologiche reali." },
-            ].map((f) => (
+            {([
+              { Icon: Sun, c: "text-amber", bc: "border-amber/10 from-amber/6 to-verdigris/2", t: "Tema Natale AI", d: "10 pianeti decodificati. Non un elenco \u2014 una radiografia della tua anima scritta solo per te." },
+              { Icon: Eye, c: "text-sienna", bc: "border-sienna/10 from-sienna/6 to-amber/2", t: "Mappa dell'Ombra", d: "Le ferite junghiane nascoste nel tuo cielo. I punti ciechi che sabotano la tua vita." },
+              { Icon: Sparkle, c: "text-amber-glow", bc: "border-amber-glow/10 from-amber-glow/5 to-verdigris/2", t: "Oracolo AI", d: "Una chat con un'intelligenza che conosce il tuo cielo, il tuo umore, i tuoi pattern." },
+              { Icon: Diamond, c: "text-amber", bc: "border-amber/10 from-amber/5 to-sienna/2", t: "Energia Cosmica", d: "Ogni giorno un punteggio unico basato sui transiti e il tuo tema natale. Sa come sar\u00e0 la tua giornata." },
+              { Icon: Moon, c: "text-verdigris", bc: "border-verdigris/10 from-verdigris/6 to-amber/2", t: "Diario Cosmico", d: "Scrivi. L'AI riflette ci\u00f2 che non vedi. Ogni entry rivela i tuoi pattern inconsci." },
+              { Icon: Compass, c: "text-verdigris", bc: "border-verdigris/10 from-verdigris/5 to-sienna/2", t: "Tre Visioni del Destino", d: "Tre futuri possibili costruiti sul tuo cielo con timeline astrologiche reali." },
+            ] as { Icon: LucideIcon; c: string; bc: string; t: string; d: string }[]).map((f) => (
               <motion.div
                 key={f.t}
                 variants={fadeUp}
                 className={`group rounded-2xl p-7 border bg-gradient-to-br ${f.bc} hover:glow transition-all duration-500 dimensional`}
               >
-                <div className={`text-3xl mb-3 ${f.c} group-hover:scale-110 transition-transform duration-300`} dangerouslySetInnerHTML={{ __html: f.icon }} />
+                <div className={`mb-3 ${f.c} group-hover:scale-110 transition-transform duration-300`}>
+                  <f.Icon size={28} className={f.c} />
+                </div>
                 <h3 className="text-base font-bold font-display mb-2">{f.t}</h3>
                 <p className="text-text-secondary leading-relaxed font-body text-sm">{f.d}</p>
               </motion.div>
@@ -251,18 +254,18 @@ export default function LandingPage() {
             </h2>
           </motion.div>
           <div className="space-y-5">
-            {[
-              { n: "01", t: "Inserisci la tua nascita", d: "Data, ora, luogo. L'AI calcola le posizioni reali dei 10 pianeti nel momento esatto in cui sei venuta/o al mondo.", icon: "&#9788;" },
-              { n: "02", t: "L'oracolo ti esplora", d: "10 domande che nessuno ti ha mai fatto. Domande che penetrano l'inconscio e rivelano ci\u00f2 che non sai di te.", icon: "&#9681;" },
-              { n: "03", t: "Lo specchio si accende", d: "Tema natale, mappa dell'ombra, energia cosmica quotidiana, visioni del destino. Tutto scritto solo per te.", icon: "&#9670;" },
-            ].map((s) => (
+            {([
+              { n: "01", t: "Inserisci la tua nascita", d: "Data, ora, luogo. L'AI calcola le posizioni reali dei 10 pianeti nel momento esatto in cui sei venuta/o al mondo.", Icon: Sun },
+              { n: "02", t: "L'oracolo ti esplora", d: "10 domande che nessuno ti ha mai fatto. Domande che penetrano l'inconscio e rivelano ci\u00f2 che non sai di te.", Icon: Eye },
+              { n: "03", t: "Lo specchio si accende", d: "Tema natale, mappa dell'ombra, energia cosmica quotidiana, visioni del destino. Tutto scritto solo per te.", Icon: Diamond },
+            ] as { n: string; t: string; d: string; Icon: LucideIcon }[]).map((s) => (
               <motion.div
                 key={s.n}
                 variants={fadeUp}
                 className="flex gap-5 md:gap-8 items-start glass rounded-2xl p-6 md:p-8 dimensional group hover:border-amber/10 transition-all duration-500"
               >
                 <div className="shrink-0 w-12 h-12 rounded-xl bg-bg-surface flex items-center justify-center group-hover:bg-amber/10 transition-colors">
-                  <span className="text-amber text-lg" dangerouslySetInnerHTML={{ __html: s.icon }} />
+                  <s.Icon size={18} className="text-amber" />
                 </div>
                 <div className="flex-1">
                   <div className="text-[10px] text-text-muted font-ui tracking-wider mb-1">PASSO {s.n}</div>
@@ -281,7 +284,9 @@ export default function LandingPage() {
           <div className="w-[700px] h-[700px] rounded-full bg-amber/5 blur-[250px]" />
         </div>
         <motion.div className="max-w-3xl mx-auto text-center relative z-10" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-          <motion.div variants={scaleIn} className="text-6xl text-amber mb-8 breathe">&#9670;</motion.div>
+          <motion.div variants={scaleIn} className="flex justify-center mb-8">
+            <Diamond size={48} className="text-amber breathe" />
+          </motion.div>
           <motion.h2 variants={scaleIn} className="font-display text-4xl md:text-6xl font-bold mb-6">
             Il tuo cielo <br /><span className="text-gradient">ti sta aspettando</span>
           </motion.h2>

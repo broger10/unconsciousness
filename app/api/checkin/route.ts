@@ -75,18 +75,24 @@ export async function GET() {
     take: 30,
   });
 
-  // Calculate streak
+  // Calculate streak — deduplicate by date to handle multiple check-ins per day
   let streak = 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < checkins.length; i++) {
-    const checkinDate = new Date(checkins[i].createdAt);
-    checkinDate.setHours(0, 0, 0, 0);
+  const uniqueDays = [...new Set(
+    checkins.map((c) => {
+      const d = new Date(c.createdAt);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })
+  )].sort((a, b) => b - a);
+
+  for (let i = 0; i < uniqueDays.length; i++) {
     const expectedDate = new Date(today);
     expectedDate.setDate(expectedDate.getDate() - i);
 
-    if (checkinDate.getTime() === expectedDate.getTime()) {
+    if (uniqueDays[i] === expectedDate.getTime()) {
       streak++;
     } else {
       break;
