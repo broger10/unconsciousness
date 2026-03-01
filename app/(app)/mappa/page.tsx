@@ -431,6 +431,22 @@ export default function MappaPage() {
             >
               Scarica il tuo tema ✦
             </a>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/stripe/payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ product: "pdf_report" }),
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                } catch { /* */ }
+              }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-ui text-center glass border border-amber/15 text-amber hover:glow transition-all"
+            >
+              Acquista €4,99
+            </button>
           </div>
         </motion.div>
       </div>

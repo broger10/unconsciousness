@@ -109,6 +109,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dati mancanti" }, { status: 400 });
   }
 
+  // Verify the ritual belongs to this user before updating
+  const existingRitual = await db.lunarRitual.findUnique({
+    where: { id: ritualId },
+  });
+
+  if (!existingRitual || existingRitual.userId !== session.user.id) {
+    return NextResponse.json({ error: "Ritual non trovato" }, { status: 404 });
+  }
+
   // Update the ritual with the intention and mark as completed
   const ritual = await db.lunarRitual.update({
     where: { id: ritualId },

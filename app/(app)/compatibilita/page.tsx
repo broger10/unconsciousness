@@ -34,6 +34,7 @@ export default function CompatibilitaPage() {
   const [result, setResult] = useState<CompatResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [error, setError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +51,7 @@ export default function CompatibilitaPage() {
     if (!birthDate || loading) return;
     setLoading(true);
     setResult(null);
+    setError("");
 
     try {
       const res = await fetch("/api/compatibility", {
@@ -63,6 +65,10 @@ export default function CompatibilitaPage() {
         }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Errore nella lettura delle stelle. Riprova.");
+        return;
+      }
       if (data.analysis) {
         setResult(data);
         // Add to history
@@ -80,7 +86,7 @@ export default function CompatibilitaPage() {
         setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 300);
       }
     } catch {
-      /* silent */
+      setError("Errore di connessione. Riprova.");
     } finally {
       setLoading(false);
     }
@@ -281,6 +287,17 @@ export default function CompatibilitaPage() {
             )}
           </button>
         </motion.div>
+
+        {/* Error */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="glass rounded-2xl p-4 mb-5 border border-sienna/20"
+          >
+            <p className="text-sm text-sienna font-body text-center">{error}</p>
+          </motion.div>
+        )}
 
         {/* Result */}
         <AnimatePresence>

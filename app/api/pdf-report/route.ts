@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { isPremium, getUserSubscription, stripe } from "@/lib/stripe";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 const DARK_BG = rgb(13 / 255, 23 / 255, 16 / 255); // #0D1710
@@ -13,6 +14,31 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+  }
+
+  // Check access: user must be premium OR have completed a one-shot payment
+  const subscription = await getUserSubscription(session.user.id);
+  const userIsPremium = isPremium(subscription);
+
+  if (!userIsPremium) {
+    // Check if user has a completed Stripe checkout for pdf_report
+    let hasPaid = false;
+    if (subscription?.stripeCustomerId) {
+      const sessions = await stripe.checkout.sessions.list({
+        customer: subscription.stripeCustomerId,
+        status: "complete",
+        limit: 10,
+      });
+      hasPaid = sessions.data.some(
+        (s) => s.metadata?.product === "pdf_report" && s.payment_status === "paid"
+      );
+    }
+    if (!hasPaid) {
+      return NextResponse.json(
+        { error: "Acquista il report PDF o attiva un abbonamento premium" },
+        { status: 403 }
+      );
+    }
   }
 
   const user = await db.user.findUnique({

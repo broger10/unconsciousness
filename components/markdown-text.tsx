@@ -12,7 +12,7 @@ export function MarkdownText({ content, className = "" }: MarkdownTextProps) {
     <div className={className}>
       <ReactMarkdown
         components={{
-          p: ({ children }) => <span>{children}</span>,
+          p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
           strong: ({ children }) => (
             <strong className="font-bold text-text-primary">{children}</strong>
           ),
