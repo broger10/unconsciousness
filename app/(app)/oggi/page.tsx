@@ -19,7 +19,9 @@ const moodSymbols = [
 ];
 
 export default function OggiPage() {
+  const [frase, setFrase] = useState<string | null>(null);
   const [horoscope, setHoroscope] = useState("");
+  const [horoscopeExpanded, setHoroscopeExpanded] = useState(false);
   const [cosmicEnergy, setCosmicEnergy] = useState<number | null>(null);
   const [profile, setProfile] = useState<{
     sunSign?: string; moonSign?: string; risingSign?: string;
@@ -46,12 +48,12 @@ export default function OggiPage() {
   const [ritualSaving, setRitualSaving] = useState(false);
 
   useEffect(() => {
-    // All 3 API calls in parallel — no waterfall
     Promise.all([
       fetch("/api/profile").then((r) => r.json()).catch(() => ({})),
       fetch("/api/checkin").then((r) => r.json()).catch(() => ({ streak: 0, checkins: [] })),
       fetch("/api/horoscope").then((r) => r.json()).catch(() => ({})),
-    ]).then(([profileData, checkinData, horoscopeData]) => {
+      fetch("/api/oggi/frase").then((r) => r.json()).catch(() => ({ frase: null })),
+    ]).then(([profileData, checkinData, horoscopeData, fraseData]) => {
       if (profileData.profile) setProfile(profileData.profile);
       if (profileData.user?.name) setUserName(profileData.user.name.split(" ")[0]);
       if (profileData.user?.credits !== undefined) setCredits(profileData.user.credits);
@@ -70,6 +72,8 @@ export default function OggiPage() {
       if (horoscopeData.horoscope) setHoroscope(horoscopeData.horoscope);
       else if (horoscopeData.needsUpgrade) setHoroscope("I tuoi crediti sono esauriti. Passa a Premium per l'oroscopo quotidiano.");
       if (horoscopeData.cosmicEnergy != null) setCosmicEnergy(horoscopeData.cosmicEnergy);
+
+      if (fraseData.frase) setFrase(fraseData.frase);
 
       // Load lunar ritual (non-blocking)
       if (profileData.profile?.onboardingComplete) {
@@ -145,212 +149,264 @@ export default function OggiPage() {
     ? cosmicEnergy >= 70 ? "text-amber" : cosmicEnergy >= 40 ? "text-verdigris" : "text-sienna"
     : "text-text-muted";
 
+  // Truncate horoscope for collapsible
+  const horoscopePreview = horoscope.length > 200 && !horoscopeExpanded
+    ? horoscope.slice(0, 200) + "..."
+    : horoscope;
+
   return (
-    <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ease: premium }}
-          className="mb-6"
-        >
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl font-bold font-display">
-              {userName ? `Ciao, ${userName}` : "Buongiorno"}
-            </h1>
+    <div className="min-h-screen relative oggi-snap">
+      {/* Card 1 — Hero: Frase Tagliente */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ ease: premium }}
+        className="oggi-card min-h-screen flex flex-col items-center justify-center px-6 py-12 relative"
+      >
+        {/* Top: name + date + signs */}
+        <div className="absolute top-6 left-0 right-0 px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold font-display">
+                {userName ? `Ciao, ${userName}` : "Buongiorno"}
+              </h1>
+              <p className="text-text-muted text-xs font-ui capitalize">{dateStr}</p>
+            </div>
             <div className="flex items-center gap-2">
-              {cosmicEnergy != null && (
-                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-                  <span className={`text-xs ${energyColor}`}>&#9670;</span>
-                  <span className={`text-xs font-bold font-ui ${energyColor}`}>{cosmicEnergy}</span>
-                </span>
-              )}
-              {credits !== null && credits < 100 && (
-                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-                  <span className="text-verdigris text-xs">&#10038;</span>
-                  <span className="text-verdigris text-xs font-bold font-ui">{credits}</span>
-                </span>
-              )}
               {streak > 0 && (
-                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
+                <span className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
                   <span className="text-amber text-xs ember-pulse">&#9670;</span>
                   <span className="text-amber text-xs font-bold font-ui">{streak}</span>
                 </span>
               )}
+              {credits !== null && credits < 100 && (
+                <span className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
+                  <span className="text-verdigris text-xs">&#10038;</span>
+                  <span className="text-verdigris text-xs font-bold font-ui">{credits}</span>
+                </span>
+              )}
             </div>
           </div>
-          <p className="text-text-muted text-sm font-ui capitalize">{dateStr}</p>
-          <div className="flex items-center gap-3 mt-2 text-xs text-text-muted font-ui">
+          <div className="flex items-center gap-3 mt-1.5 text-[10px] text-text-muted font-ui">
             <span>&#9788; {profile.sunSign}</span>
             <span className="text-border-light">&#183;</span>
             <span>&#9790; {profile.moonSign}</span>
             <span className="text-border-light">&#183;</span>
             <span>&#8593; {profile.risingSign}</span>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Energia cosmica del giorno */}
-        {cosmicEnergy != null && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05, ease: premium }}
-            className="glass rounded-2xl p-5 mb-5 dimensional"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] text-text-muted font-ui tracking-[0.2em]">ENERGIA COSMICA</div>
-              <span className={`text-lg font-bold font-display ${energyColor}`}>{cosmicEnergy}%</span>
-            </div>
-            <div className="h-2 bg-bg-surface rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${cosmicEnergy}%` }}
-                transition={{ delay: 0.3, duration: 1, ease: premium }}
-                className={`h-full rounded-full ${
-                  cosmicEnergy >= 70 ? "bg-gradient-to-r from-amber-dim to-amber" :
-                  cosmicEnergy >= 40 ? "bg-gradient-to-r from-verdigris-dim to-verdigris" :
-                  "bg-gradient-to-r from-sienna-dim to-sienna"
-                }`}
-              />
-            </div>
-            <p className="text-[10px] text-text-muted font-ui mt-2">
-              {cosmicEnergy >= 70 ? "Giornata di forte allineamento. Segui i tuoi impulsi." :
-               cosmicEnergy >= 40 ? "Transiti neutri. Buon momento per riflettere." :
-               "Tensione nei transiti. Pratica pazienza e introspezione."}
-            </p>
-          </motion.div>
-        )}
-
-        {/* Oroscopo del giorno */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, ease: premium }}
-          className={`glass rounded-2xl p-6 mb-5 dimensional glow border border-amber/10 ${isPremium ? "premium-glow" : ""}`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-[10px] text-amber font-ui tracking-[0.2em]">&#9670; IL TUO OROSCOPO DI OGGI</div>
-          </div>
-          {horoscopeLoading ? (
-            <div className="flex items-center gap-3 py-4">
-              <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              <span className="text-text-muted text-sm font-ui ml-2">Le stelle parlano...</span>
-            </div>
-          ) : horoscope ? (
-            <div className="text-text-primary leading-relaxed italic text-lg font-body">&ldquo;<MarkdownText content={horoscope} className="inline" />&rdquo;</div>
+        {/* Center: the cutting phrase */}
+        <div className="max-w-lg text-center px-2">
+          {frase ? (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8, ease: premium }}
+              className="text-display text-amber italic leading-tight"
+            >
+              {frase}
+            </motion.p>
           ) : (
-            <p className="text-text-muted font-body italic">L&apos;oracolo sta preparando il tuo messaggio...</p>
+            <div className="text-display text-amber/20 italic">
+              <span className="filo-shimmer inline-block w-full h-12 rounded-lg" />
+            </div>
           )}
+        </div>
+
+        {/* Bottom: scroll hint */}
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+          <p className="text-text-muted text-xs font-ui scroll-hint">
+            Scorri per il tuo cielo ↓
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Card 2 — Energia Cosmica */}
+      {cosmicEnergy != null && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ ease: premium }}
+          className="oggi-card min-h-[60vh] flex flex-col items-center justify-center px-6 py-12"
+        >
+          <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-6">ENERGIA COSMICA OGGI</div>
+          <div className={`text-7xl font-bold font-display ${energyColor} mb-4`}>{cosmicEnergy}%</div>
+          <div className="w-full max-w-xs h-2 bg-bg-surface rounded-full overflow-hidden mb-4">
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: `${cosmicEnergy}%` }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 1, ease: premium }}
+              className={`h-full rounded-full ${
+                cosmicEnergy >= 70 ? "bg-gradient-to-r from-amber-dim to-amber" :
+                cosmicEnergy >= 40 ? "bg-gradient-to-r from-verdigris-dim to-verdigris" :
+                "bg-gradient-to-r from-sienna-dim to-sienna"
+              }`}
+            />
+          </div>
+          <p className="text-text-secondary text-sm font-body italic text-center max-w-xs">
+            {cosmicEnergy >= 70 ? "Giornata di forte allineamento. Segui i tuoi impulsi." :
+             cosmicEnergy >= 40 ? "Transiti neutri. Buon momento per riflettere." :
+             "Tensione nei transiti. Pratica pazienza e introspezione."}
+          </p>
         </motion.div>
+      )}
 
-        {/* Push notification banner */}
-        <PushBanner />
-
-        {/* Lunar Ritual Card — only on New/Full Moon days */}
-        {lunarRitual?.active && (
+      {/* Card 3 — L'Oroscopo */}
+      <div className="oggi-card px-4 py-8">
+        <div className="max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, ease: premium }}
-            className={`glass rounded-2xl p-5 mb-5 dimensional glow border ${
-              lunarRitual.phase === "new_moon" ? "border-verdigris/15" : "border-amber-glow/15"
-            }`}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ ease: premium }}
+            className={`glass rounded-2xl p-6 dimensional glow border border-amber/10 ${isPremium ? "premium-glow" : ""}`}
           >
-            <div className="text-[10px] font-ui tracking-[0.2em] mb-3" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
-              {lunarRitual.phase === "new_moon"
-                ? `✦ LUNA NUOVA IN ${lunarRitual.sign?.toUpperCase()}`
-                : `☾ LUNA PIENA IN ${lunarRitual.sign?.toUpperCase()}`}
-            </div>
-
-            {lunarRitual.completed ? (
+            <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">&#9670; IL TUO CIELO</div>
+            {horoscopeLoading ? (
+              <div className="flex items-center gap-3 py-4">
+                <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="text-text-muted text-sm font-ui ml-2">Le stelle parlano...</span>
+              </div>
+            ) : horoscope ? (
               <div>
-                <p className="text-text-secondary font-body italic text-sm mb-2">Ritual completato ✦</p>
-                {lunarRitual.intention && (
-                  <p className="text-text-primary font-body italic text-sm leading-relaxed">
-                    &ldquo;{lunarRitual.intention}&rdquo;
-                  </p>
+                <MarkdownText
+                  content={horoscopePreview}
+                  className="text-text-primary leading-relaxed italic text-lg font-body"
+                />
+                {horoscope.length > 200 && !horoscopeExpanded && (
+                  <button
+                    onClick={() => setHoroscopeExpanded(true)}
+                    className="text-amber text-xs font-ui mt-3 transition-colors hover:text-amber-glow"
+                  >
+                    Continua a leggere ↓
+                  </button>
                 )}
               </div>
             ) : (
-              <div>
-                {lunarRitual.aiMessage && (
-                  <MarkdownText
-                    content={lunarRitual.aiMessage}
-                    className="text-text-secondary font-body italic text-sm leading-relaxed mb-4"
-                  />
-                )}
-                <textarea
-                  value={ritualText}
-                  onChange={(e) => setRitualText(e.target.value)}
-                  placeholder={lunarRitual.phase === "new_moon"
-                    ? "Scrivi la tua intenzione per questo ciclo..."
-                    : "Cosa lasci andare?"}
-                  rows={3}
-                  className="w-full bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body italic placeholder:text-text-muted/60 resize-none focus:outline-none border border-border/50 focus:border-amber/30 transition-colors mb-3"
-                />
-                <button
-                  onClick={saveRitual}
-                  disabled={!ritualText.trim() || ritualSaving}
-                  className={`w-full py-2.5 rounded-xl text-sm font-ui transition-all duration-300 ${
-                    ritualText.trim() && !ritualSaving
-                      ? lunarRitual.phase === "new_moon"
-                        ? "bg-verdigris text-bg-base dimensional hover:glow"
-                        : "bg-amber-glow text-bg-base dimensional hover:glow"
-                      : "bg-bg-surface text-text-muted border border-border/50"
-                  }`}
-                >
-                  {ritualSaving
-                    ? "..."
-                    : lunarRitual.phase === "new_moon"
-                    ? "Sigilla l'intenzione ✦"
-                    : "Rilascia ✦"}
-                </button>
-              </div>
+              <p className="text-text-muted font-body italic">L&apos;oracolo sta preparando il tuo messaggio...</p>
             )}
           </motion.div>
-        )}
+        </div>
+      </div>
 
-        {/* Mood check-in rapido */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, ease: premium }}
-          className="glass rounded-2xl p-5 mb-5 dimensional"
-        >
-          <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-3">
-            {moodSaved ? "&#9670; REGISTRATO OGGI" : "COME TI SENTI OGGI?"}
-          </div>
-          <div className="flex justify-between gap-2">
-            {moodSymbols.map((m) => (
-              <button
-                key={m.v}
-                onClick={() => !moodSaved && saveMood(m.v)}
-                disabled={moodSaved}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-300 flex-1 ${
-                  todayMood === m.v
-                    ? "glass glow text-amber scale-105"
-                    : moodSaved
-                    ? "opacity-30"
-                    : "hover:bg-bg-glass text-text-muted hover:text-amber"
-                }`}
-              >
-                <span className="text-2xl" dangerouslySetInnerHTML={{ __html: m.s }} />
-                <span className="text-[10px] font-ui">{m.l}</span>
-              </button>
-            ))}
-          </div>
-        </motion.div>
+      {/* Push notification banner */}
+      <div className="px-4">
+        <PushBanner />
+      </div>
 
-        {/* Per te — card orizzontali */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, ease: premium }}
-          className="mb-5"
-        >
+      {/* Card 4 — Lunar Ritual (conditional) */}
+      {lunarRitual?.active && (
+        <div className="oggi-card px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ ease: premium }}
+              className={`glass rounded-2xl p-6 dimensional glow border ${
+                lunarRitual.phase === "new_moon" ? "border-verdigris/15" : "border-amber-glow/15"
+              }`}
+            >
+              <div className="text-[10px] font-ui tracking-[0.2em] mb-4" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
+                {lunarRitual.phase === "new_moon"
+                  ? `✦ LUNA NUOVA IN ${lunarRitual.sign?.toUpperCase()}`
+                  : `☾ LUNA PIENA IN ${lunarRitual.sign?.toUpperCase()}`}
+              </div>
+
+              {lunarRitual.completed ? (
+                <div>
+                  <p className="text-text-secondary font-body italic text-sm mb-2">Ritual completato ✦</p>
+                  {lunarRitual.intention && (
+                    <p className="text-text-primary font-body italic text-sm leading-relaxed">
+                      &ldquo;{lunarRitual.intention}&rdquo;
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  {lunarRitual.aiMessage && (
+                    <MarkdownText
+                      content={lunarRitual.aiMessage}
+                      className="text-text-secondary font-body italic text-sm leading-relaxed mb-4"
+                    />
+                  )}
+                  <textarea
+                    value={ritualText}
+                    onChange={(e) => setRitualText(e.target.value)}
+                    placeholder={lunarRitual.phase === "new_moon"
+                      ? "Scrivi la tua intenzione per questo ciclo..."
+                      : "Cosa lasci andare?"}
+                    rows={3}
+                    className="w-full bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body italic placeholder:text-text-muted/60 resize-none focus:outline-none border border-border/50 focus:border-amber/30 transition-colors mb-3"
+                  />
+                  <button
+                    onClick={saveRitual}
+                    disabled={!ritualText.trim() || ritualSaving}
+                    className={`w-full py-2.5 rounded-xl text-sm font-ui transition-all duration-300 ${
+                      ritualText.trim() && !ritualSaving
+                        ? lunarRitual.phase === "new_moon"
+                          ? "bg-verdigris text-bg-base dimensional hover:glow"
+                          : "bg-amber-glow text-bg-base dimensional hover:glow"
+                        : "bg-bg-surface text-text-muted border border-border/50"
+                    }`}
+                  >
+                    {ritualSaving
+                      ? "..."
+                      : lunarRitual.phase === "new_moon"
+                      ? "Sigilla l'intenzione ✦"
+                      : "Rilascia ✦"}
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* Card 5 — Mood Check-in */}
+      <div className="oggi-card px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ ease: premium }}
+            className="glass rounded-2xl p-6 dimensional"
+          >
+            <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4">
+              {moodSaved ? "&#9670; REGISTRATO OGGI" : "COME TI SENTI OGGI?"}
+            </div>
+            <div className="flex justify-between gap-2">
+              {moodSymbols.map((m) => (
+                <button
+                  key={m.v}
+                  onClick={() => !moodSaved && saveMood(m.v)}
+                  disabled={moodSaved}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 flex-1 ${
+                    todayMood === m.v
+                      ? "glass glow text-amber scale-105"
+                      : moodSaved
+                      ? "opacity-30"
+                      : "hover:bg-bg-glass text-text-muted hover:text-amber"
+                  }`}
+                >
+                  <span className="text-2xl" dangerouslySetInnerHTML={{ __html: m.s }} />
+                  <span className="text-[10px] font-ui">{m.l}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Card 6 — Per Te */}
+      <div className="oggi-card px-4 py-8">
+        <div className="max-w-2xl mx-auto">
           <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-3 px-1">PER TE</div>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
             <Link href="/chiedi" className="shrink-0 w-44">
@@ -363,7 +419,7 @@ export default function OggiPage() {
             <Link href="/visions" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-amber/3 dimensional h-full group hover:glow transition-all">
                 <div className="text-2xl text-verdigris mb-3">&#9672;</div>
-                <div className="text-sm font-bold font-display mb-1">Tre Visioni</div>
+                <div className="text-sm font-bold font-display mb-1">Tre Destini</div>
                 <div className="text-[10px] text-text-muted font-ui">Il tuo futuro, triplicato</div>
               </div>
             </Link>
@@ -377,7 +433,7 @@ export default function OggiPage() {
             <Link href="/compatibilita" className="shrink-0 w-44">
               <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-sienna/3 dimensional h-full group hover:glow transition-all">
                 <div className="text-2xl text-verdigris mb-3">&#10038;</div>
-                <div className="text-sm font-bold font-display mb-1">Compatibilità</div>
+                <div className="text-sm font-bold font-display mb-1">Compatibilit&agrave;</div>
                 <div className="text-[10px] text-text-muted font-ui">Due anime, una danza</div>
               </div>
             </Link>
@@ -389,36 +445,35 @@ export default function OggiPage() {
               </div>
             </Link>
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Doni e ombre */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, ease: premium }}
-          className="grid grid-cols-2 gap-3 mb-5"
-        >
-          <div className="glass rounded-2xl p-5 dimensional">
-            <div className="text-[10px] text-amber mb-3 font-ui tracking-[0.2em]">DONI COSMICI</div>
-            <div className="space-y-2">
-              {profile.strengths?.slice(0, 3).map((s, i) => (
-                <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
-                  <span className="text-amber shrink-0">&#9670;</span><span>{s}</span>
-                </div>
-              ))}
+      {/* Card 7 — Doni e Ombre */}
+      <div className="oggi-card px-4 py-8 pb-12">
+        <div className="max-w-2xl mx-auto">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass rounded-2xl p-5 dimensional">
+              <div className="text-[10px] text-amber mb-3 font-ui tracking-[0.2em]">DONI COSMICI</div>
+              <div className="space-y-2">
+                {profile.strengths?.slice(0, 3).map((s, i) => (
+                  <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
+                    <span className="text-amber shrink-0">&#9670;</span><span>{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="glass rounded-2xl p-5 dimensional">
+              <div className="text-[10px] text-sienna mb-3 font-ui tracking-[0.2em]">OMBRE ATTIVE</div>
+              <div className="space-y-2">
+                {profile.shadows?.slice(0, 3).map((s, i) => (
+                  <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
+                    <span className="text-sienna shrink-0">&#9681;</span><span>{s}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="glass rounded-2xl p-5 dimensional">
-            <div className="text-[10px] text-sienna mb-3 font-ui tracking-[0.2em]">OMBRE ATTIVE</div>
-            <div className="space-y-2">
-              {profile.shadows?.slice(0, 3).map((s, i) => (
-                <div key={i} className="text-sm text-text-secondary flex items-start gap-2 font-body">
-                  <span className="text-sienna shrink-0">&#9681;</span><span>{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

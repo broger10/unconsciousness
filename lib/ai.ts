@@ -771,3 +771,51 @@ export async function generateMorningPushMessage(profile: {
   });
   return (message.content[0] as { type: "text"; text: string }).text;
 }
+
+// ============================================
+// FRASE TAGLIENTE — The Cosmic Razor
+// ============================================
+
+export async function generateCuttingPhrase(
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+  },
+  currentTransits: Array<{ planet: string; sign: string }>
+) {
+  const transitContext = currentTransits
+    .slice(0, 5)
+    .map((t) => `${t.planet} in ${t.sign}`)
+    .join(", ");
+
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 100,
+    system: `Sei un oracolo cosmico tagliente. Genera UNA SOLA FRASE in italiano — massimo 15 parole.
+La frase deve:
+- Essere specifica per il tema natale e i transiti di oggi
+- Suonare come una profezia sussurrata, non come un consiglio
+- Rivelare qualcosa che la persona evita ma ha bisogno di sentire
+- Presente indicativo, seconda persona singolare
+- Niente emoji, niente virgolette, niente punteggiatura finale
+- Usa sempre simboli Unicode diretti. Mai HTML entities.
+
+Esempi di tono:
+"Stai aspettando il permesso di qualcuno che non lo darà mai"
+"Il tuo silenzio oggi pesa più delle tue parole"
+"La paura che eviti è la direzione giusta"
+"Stai costruendo muri dove servirebbero porte"`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+Transiti di oggi: ${transitContext || "N/A"}
+Genera la frase tagliente.`,
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text.trim();
+}

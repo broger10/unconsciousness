@@ -40,6 +40,46 @@ const moodSymbols: Record<number, string> = {
   5: "&#10038;",
 };
 
+const dailyPhrases = [
+  "Cosa attraversa la tua mente oggi?",
+  "Quale ombra hai incontrato questa settimana?",
+  "Scrivi ciò che non riesci a dire ad alta voce",
+  "Qual è la verità che stai evitando?",
+  "Cosa hai scoperto di te oggi?",
+  "Descrivi un momento che ti ha sorpreso",
+  "Quale pattern si sta ripetendo?",
+  "Cosa ti sta chiedendo il silenzio?",
+  "Dove senti resistenza nella tua vita?",
+  "Quale parte di te chiede attenzione?",
+  "Scrivi una lettera al te stesso di un anno fa",
+  "Cosa significherebbe lasciar andare?",
+  "Quale domanda continua a tornare?",
+  "Cosa ti ha insegnato la Luna questa settimana?",
+  "Descrivi una paura che porti con te",
+  "Quale dono non stai usando?",
+  "Cosa cambieresti se nessuno giudicasse?",
+  "Scrivi il sogno più vivido che ricordi",
+  "Quale relazione ti sta trasformando?",
+  "Dove cerchi approvazione?",
+  "Cosa significa casa per te oggi?",
+  "Quale confine hai bisogno di tracciare?",
+  "Scrivi senza pensare per due minuti",
+  "Cosa ti rende vivo/a in questo momento?",
+  "Quale eredità stai portando avanti?",
+  "Descrivi il tuo rapporto con il tempo",
+  "Cosa stai costruendo nel silenzio?",
+  "Quale versione di te sta emergendo?",
+  "Scrivi la cosa più vera che sai",
+  "Cosa ti direbbe il cielo se potesse parlare?",
+];
+
+function getDailyPhrase(): string {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return dailyPhrases[dayOfYear % dailyPhrases.length];
+}
+
 export default function DiarioPage() {
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [checkins, setCheckins] = useState<CheckinEntry[]>([]);
@@ -48,6 +88,7 @@ export default function DiarioPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("tutto");
   const [expandedReflection, setExpandedReflection] = useState<string | null>(null);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -164,7 +205,7 @@ export default function DiarioPage() {
           <textarea
             value={newEntry}
             onChange={(e) => setNewEntry(e.target.value)}
-            placeholder="Cosa attraversa la tua mente oggi?"
+            placeholder={getDailyPhrase()}
             rows={4}
             className="w-full bg-transparent text-text-primary font-body text-lg italic placeholder:text-text-muted/60 resize-none focus:outline-none leading-relaxed mb-3"
           />
@@ -184,10 +225,10 @@ export default function DiarioPage() {
               {saving ? (
                 <span className="flex items-center gap-2">
                   <span className="w-1 h-1 bg-bg-base rounded-full animate-bounce" />
-                  Rifletto...
+                  Rivelo...
                 </span>
               ) : (
-                "Rifletti"
+                "◆ Rivela"
               )}
             </button>
           </div>
@@ -241,7 +282,16 @@ export default function DiarioPage() {
                         >
                           <div className="flex items-start gap-2 mb-2">
                             <span className="text-amber text-xs shrink-0 mt-0.5">&#9790;</span>
-                            <p className="text-sm text-text-primary font-body leading-relaxed">{j.content}</p>
+                            {j.content.length > 80 && !expandedEntries.has(j.id) ? (
+                              <p
+                                className="text-sm text-text-primary font-body leading-relaxed cursor-pointer"
+                                onClick={() => setExpandedEntries((prev) => new Set(prev).add(j.id))}
+                              >
+                                {j.content.slice(0, 80)}...
+                              </p>
+                            ) : (
+                              <p className="text-sm text-text-primary font-body leading-relaxed">{j.content}</p>
+                            )}
                           </div>
                           {j.aiReflection && (
                             <>

@@ -156,10 +156,10 @@ export default function ProfiloPage() {
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold font-display">{user?.name || "Viaggiatore"}</h1>
+                <h1 className="text-2xl font-bold font-display">{user?.name || "Viaggiatore"}</h1>
                 {sub?.isPremium && (
-                  <span className="oracle-badge text-[10px] font-ui text-amber px-2 py-0.5 rounded-full glass border border-amber/15">
-                    &#10038; Oracolo
+                  <span className="oracle-badge text-[9px] font-ui text-amber px-2.5 py-1 rounded-full glass border border-amber/15 tracking-[0.15em]">
+                    ◆ MEMBRO DEL SANCTUM
                   </span>
                 )}
               </div>
@@ -421,20 +421,26 @@ export default function ProfiloPage() {
             <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4">DATI DI NASCITA</div>
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-border/30">
-                <span className="text-xs text-text-muted font-ui">Data</span>
+                <span className="text-xs text-text-muted font-ui">◆ Data</span>
                 <span className="text-sm text-text-primary font-ui">
-                  {new Date(profile.birthDate + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+                  {(() => {
+                    if (!profile.birthDate) return "—";
+                    const [y, m, d] = profile.birthDate.split("T")[0].split("-").map(Number);
+                    if (!y || !m || !d) return "—";
+                    const date = new Date(y, m - 1, d);
+                    return isNaN(date.getTime()) ? "—" : date.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+                  })()}
                 </span>
               </div>
               {profile.birthTime && (
                 <div className="flex items-center justify-between py-2 border-b border-border/30">
-                  <span className="text-xs text-text-muted font-ui">Ora</span>
+                  <span className="text-xs text-text-muted font-ui">◆ Ora</span>
                   <span className="text-sm text-text-primary font-ui">{profile.birthTime}</span>
                 </div>
               )}
               {profile.birthCity && (
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-xs text-text-muted font-ui">Luogo</span>
+                  <span className="text-xs text-text-muted font-ui">◆ Luogo</span>
                   <span className="text-sm text-text-primary font-ui">{profile.birthCity}</span>
                 </div>
               )}
@@ -479,7 +485,7 @@ export default function ProfiloPage() {
             onClick={() => signOut({ callbackUrl: "/" })}
             className="w-full glass rounded-xl p-4 text-center text-sienna text-sm font-ui hover:bg-sienna/10 transition-colors duration-300"
           >
-            Esci dal portale
+            ← Lascia il Sanctum
           </button>
         </motion.div>
 

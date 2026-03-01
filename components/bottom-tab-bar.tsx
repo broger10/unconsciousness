@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { href: "/oggi", icon: "&#9670;", label: "Oggi" },
   { href: "/mappa", icon: "&#9672;", label: "Mappa" },
-  { href: "/chiedi", icon: "&#10038;", label: "Chiedi", center: true },
+  { href: "/chiedi", icon: "&#10038;", label: "Oracolo", center: true },
   { href: "/diario", icon: "&#9790;", label: "Diario" },
   { href: "/profilo", icon: "&#9681;", label: "Profilo" },
 ];
@@ -37,7 +37,7 @@ export function BottomTabBar() {
               {isCenter ? (
                 <span
                   className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 dimensional",
+                    "w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 dimensional star-pulse",
                     active
                       ? "bg-amber text-bg-base"
                       : "bg-bg-card border border-border text-amber"

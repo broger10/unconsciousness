@@ -104,7 +104,7 @@ export default function ChiediPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative stars-bg">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -119,7 +119,7 @@ export default function ChiediPage() {
               href="/visions"
               className="text-[10px] text-amber font-ui tracking-wide glass rounded-full px-3 py-1.5 hover:glow transition-all"
             >
-              &#10038; Tre Visioni
+              &#10038; Tre Destini
             </Link>
           </div>
           <p className="text-text-muted text-xs font-ui">Le stelle ascoltano. Chiedi ci&ograve; che il cuore vuole sapere.</p>
@@ -135,21 +135,22 @@ export default function ChiediPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ease: premium }}
-              className="flex flex-col items-center justify-center py-16"
+              className="flex flex-col items-center justify-center py-20"
             >
-              <div className="text-5xl text-amber mb-6 breathe">&#10038;</div>
-              <p className="text-text-secondary font-body italic text-lg text-center mb-8 max-w-xs">
+              <div className="text-7xl text-amber mb-8 breathe">&#10038;</div>
+              <h2 className="text-headline text-text-primary mb-3">Le stelle ascoltano.</h2>
+              <p className="text-text-secondary font-body italic text-base text-center mb-10 max-w-xs">
                 Ogni domanda che fai &egrave; un atto di coraggio cosmico.
               </p>
-              <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+              <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                 {suggestions.map((s) => (
                   <button
                     key={s.text}
                     onClick={() => send(s.text)}
-                    className="glass rounded-xl p-3 text-left hover:glow hover:border-amber/10 transition-all duration-300 group"
+                    className="glass rounded-2xl p-5 text-left hover:glow hover:border-amber/10 transition-all duration-300 group"
                   >
-                    <span className="text-amber text-sm group-hover:scale-110 inline-block transition-transform" dangerouslySetInnerHTML={{ __html: s.icon }} />
-                    <p className="text-xs text-text-secondary font-ui mt-1">{s.text}</p>
+                    <span className="text-amber text-lg group-hover:scale-110 inline-block transition-transform mb-2" dangerouslySetInnerHTML={{ __html: s.icon }} />
+                    <p className="text-sm text-text-secondary font-body">{s.text}</p>
                   </button>
                 ))}
               </div>
@@ -238,7 +239,7 @@ export default function ChiediPage() {
             placeholder="Chiedi all'oracolo..."
             aria-label="Chiedi all'oracolo"
             rows={1}
-            className="flex-1 bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body placeholder:text-text-muted resize-none border border-border/50 focus:border-amber/30 focus:outline-none transition-colors"
+            className="flex-1 bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body placeholder:text-text-muted resize-none border border-amber/20 focus:border-amber/40 focus:outline-none transition-colors"
             style={{ maxHeight: "120px" }}
           />
           <button

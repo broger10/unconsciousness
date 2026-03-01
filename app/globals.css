@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Alchemical palette — dark forest green + raw amber + verdigris */
-  --bg-base: #0D1710;
-  --bg-surface: #141F16;
-  --bg-card: #1C2A1E;
-  --bg-glass: rgba(201, 169, 110, 0.03);
+  /* Alchemical palette — deep forest + pure gold + living green */
+  --bg-base: #0A1A0F;
+  --bg-surface: #0F2415;
+  --bg-card: #1A2E1C;
+  --bg-glass: rgba(201, 168, 76, 0.03);
 
-  --amber: #C9A96E;
-  --amber-dim: #A08550;
+  --amber: #C9A84C;
+  --amber-dim: #A08540;
   --amber-glow: #D4B87A;
-  --verdigris: #4E9E8A;
+  --verdigris: #4A9B8E;
   --verdigris-dim: #3A7A6A;
-  --sienna: #C05E3C;
+  --sienna: #C4614A;
   --sienna-dim: #8B4530;
 
-  --text-primary: #EDE8DC;
-  --text-secondary: #B8AF9B;
-  --text-muted: #8A8578;
-  --border: #2A3D2C;
-  --border-light: #34503A;
+  --text-primary: #F0E6C8;
+  --text-secondary: #8BAF8D;
+  --text-muted: #5A7A5C;
+  --border: #1E3A22;
+  --border-light: #2A5030;
 
-  --success: #4E9E8A;
-  --warning: #C9A96E;
-  --danger: #C05E3C;
+  --success: #4A9B8E;
+  --warning: #C9A84C;
+  --danger: #C4614A;
 }
 
 @theme inline {
@@ -46,7 +46,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-playfair);
   --font-ui: var(--font-syne);
   --font-body: var(--font-cormorant);
 }
@@ -215,7 +215,7 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
 }
 
 .font-body {
@@ -290,9 +290,68 @@ body {
   contain-intrinsic-size: auto 500px;
 }
 
+/* Typography scale — Playfair Display driven */
+.text-display {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(36px, 8vw, 56px);
+  line-height: 1.1;
+  font-weight: 700;
+}
+.text-headline {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(24px, 5vw, 36px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+/* Oggi page — scroll snap for card sequence */
+.oggi-snap {
+  scroll-snap-type: y proximity;
+}
+.oggi-card {
+  scroll-snap-align: start;
+}
+
+/* Nav center button — ambient 8s glow */
+@keyframes star-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(201,168,76,0.15); }
+  50% { box-shadow: 0 0 16px 4px rgba(201,168,76,0.3); }
+}
+.star-pulse {
+  animation: star-pulse 8s ease-in-out infinite;
+}
+
+/* Stars background — Chiedi/Oracolo page */
+.stars-bg {
+  background-image:
+    radial-gradient(1px 1px at 5% 15%, rgba(201,168,76,0.3), transparent),
+    radial-gradient(1px 1px at 12% 78%, rgba(201,168,76,0.2), transparent),
+    radial-gradient(1.5px 1.5px at 20% 45%, rgba(74,155,142,0.25), transparent),
+    radial-gradient(1px 1px at 32% 8%, rgba(201,168,76,0.15), transparent),
+    radial-gradient(1px 1px at 40% 62%, rgba(74,155,142,0.2), transparent),
+    radial-gradient(1.5px 1.5px at 48% 90%, rgba(201,168,76,0.25), transparent),
+    radial-gradient(1px 1px at 55% 28%, rgba(201,168,76,0.2), transparent),
+    radial-gradient(1px 1px at 65% 55%, rgba(74,155,142,0.15), transparent),
+    radial-gradient(1.5px 1.5px at 72% 82%, rgba(201,168,76,0.2), transparent),
+    radial-gradient(1px 1px at 78% 12%, rgba(74,155,142,0.2), transparent),
+    radial-gradient(1px 1px at 85% 38%, rgba(201,168,76,0.15), transparent),
+    radial-gradient(1.5px 1.5px at 92% 68%, rgba(74,155,142,0.25), transparent),
+    radial-gradient(1px 1px at 95% 5%, rgba(201,168,76,0.2), transparent);
+  background-size: 100% 100%;
+}
+
+/* Scroll hint — pulse down arrow */
+@keyframes scroll-hint {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(6px); }
+}
+.scroll-hint {
+  animation: scroll-hint 2s ease-in-out infinite;
+}
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint {
     animation: none !important;
   }
   .filo-toast-enter, .filo-fade-in {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Syne, Cormorant_Infant } from "next/font/google";
+import { Fraunces, Syne, Cormorant_Infant, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -24,6 +24,13 @@ const cormorant = Cormorant_Infant({
   display: "swap",
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "unconsciousness — il tuo specchio cosmico",
   description:
@@ -37,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className={`dark ${fraunces.variable} ${syne.variable} ${cormorant.variable}`}>
+    <html lang="it" className={`dark ${playfair.variable} ${fraunces.variable} ${syne.variable} ${cormorant.variable}`}>
       <body
         className="antialiased min-h-screen grain"
       >
