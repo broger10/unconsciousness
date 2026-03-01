@@ -259,7 +259,7 @@ export default function OnboardingPage() {
               </motion.div>
             )}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-              <a href="/dashboard"><Button className="w-full py-6 text-lg breathe">Entra nel tuo universo</Button></a>
+              <a href="/oggi"><Button className="w-full py-6 text-lg breathe">Entra nel tuo universo</Button></a>
             </motion.div>
           </motion.div>
         )}
