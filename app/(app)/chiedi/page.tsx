@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { MarkdownText } from "@/components/markdown-text";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -177,7 +178,7 @@ export default function ChiediPage() {
                     <div className="max-w-[85%]">
                       <div className="flex items-start gap-2">
                         <span className="text-amber text-sm shrink-0 mt-1">&#10038;</span>
-                        <p className="text-sm text-text-secondary font-body italic leading-relaxed">{msg.content}</p>
+                        <MarkdownText content={msg.content} className="text-sm text-text-secondary font-body italic leading-relaxed" />
                       </div>
                     </div>
                   </div>

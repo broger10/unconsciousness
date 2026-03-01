@@ -21,6 +21,9 @@ model User {
   checkins      DailyCheckin[]
   insights      Insight[]
   journals      Journal[]
+  compatibilities Compatibility[]
+  lunarRituals    LunarRitual[]
+  pushSubscriptions PushSubscription[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -177,5 +180,42 @@ model Journal {
   aiReflection   String?  @db.Text  // AI analysis of the entry
   mood           String?             // Detected mood
   themes         String[] @default([])
+  tags           String[] @default([])
   createdAt      DateTime @default(now())
+}
+
+model Compatibility {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person2Name     String?
+  person2BirthDate DateTime
+  person2BirthTime String?
+  person2BirthCity String?
+  person2ChartData Json?
+  analysis        String   @db.Text
+  highlightQuote  String?  @db.Text  // Most powerful quote for sharing
+  createdAt       DateTime @default(now())
+}
+
+model LunarRitual {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lunarPhase  String   // "new_moon" | "full_moon"
+  lunarSign   String   // Sign of the moon during this event
+  aiMessage   String   @db.Text
+  intention   String?  @db.Text  // User's intention/release text
+  completed   Boolean  @default(false)
+  cycleDate   DateTime // The actual lunar event date
+  createdAt   DateTime @default(now())
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Json     // Web Push subscription object
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
 }

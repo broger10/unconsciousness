@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MarkdownText } from "@/components/markdown-text";
+import { PushBanner } from "@/components/push-banner";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -28,6 +30,17 @@ export default function OggiPage() {
   const [moodSaved, setMoodSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [horoscopeLoading, setHoroscopeLoading] = useState(false);
+  const [lunarRitual, setLunarRitual] = useState<{
+    active: boolean;
+    completed: boolean;
+    ritualId?: string;
+    phase?: string;
+    sign?: string;
+    aiMessage?: string;
+    intention?: string;
+  } | null>(null);
+  const [ritualText, setRitualText] = useState("");
+  const [ritualSaving, setRitualSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -57,6 +70,12 @@ export default function OggiPage() {
           .then((d) => { if (d.horoscope) setHoroscope(d.horoscope); })
           .catch(() => {})
           .finally(() => setHoroscopeLoading(false));
+
+        // Load lunar ritual
+        fetch("/api/lunar-ritual")
+          .then((r) => r.json())
+          .then((d) => { if (d.active) setLunarRitual(d); })
+          .catch(() => {});
       }
     }).catch(() => setLoading(false));
   }, []);
@@ -72,6 +91,21 @@ export default function OggiPage() {
       });
       setStreak((s) => s + 1);
     } catch { /* */ }
+  };
+
+  const saveRitual = async () => {
+    if (!ritualText.trim() || !lunarRitual?.ritualId || ritualSaving) return;
+    setRitualSaving(true);
+    try {
+      await fetch("/api/lunar-ritual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ritualId: lunarRitual.ritualId, intention: ritualText }),
+      });
+      setLunarRitual({ ...lunarRitual, completed: true, intention: ritualText });
+    } catch { /* */ } finally {
+      setRitualSaving(false);
+    }
   };
 
   if (loading) {
@@ -150,11 +184,78 @@ export default function OggiPage() {
               <span className="text-text-muted text-sm font-ui ml-2">Le stelle parlano...</span>
             </div>
           ) : horoscope ? (
-            <p className="text-text-primary leading-relaxed italic text-lg font-body">&ldquo;{horoscope}&rdquo;</p>
+            <div className="text-text-primary leading-relaxed italic text-lg font-body">&ldquo;<MarkdownText content={horoscope} className="inline" />&rdquo;</div>
           ) : (
             <p className="text-text-muted font-body italic">L&apos;oracolo sta preparando il tuo messaggio...</p>
           )}
         </motion.div>
+
+        {/* Push notification banner */}
+        <PushBanner />
+
+        {/* Lunar Ritual Card — only on New/Full Moon days */}
+        {lunarRitual?.active && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, ease: premium }}
+            className={`glass rounded-2xl p-5 mb-5 dimensional glow border ${
+              lunarRitual.phase === "new_moon" ? "border-verdigris/15" : "border-amber-glow/15"
+            }`}
+          >
+            <div className="text-[10px] font-ui tracking-[0.2em] mb-3" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
+              {lunarRitual.phase === "new_moon"
+                ? `✦ LUNA NUOVA IN ${lunarRitual.sign?.toUpperCase()}`
+                : `☾ LUNA PIENA IN ${lunarRitual.sign?.toUpperCase()}`}
+            </div>
+
+            {lunarRitual.completed ? (
+              <div>
+                <p className="text-text-secondary font-body italic text-sm mb-2">Ritual completato ✦</p>
+                {lunarRitual.intention && (
+                  <p className="text-text-primary font-body italic text-sm leading-relaxed">
+                    &ldquo;{lunarRitual.intention}&rdquo;
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                {lunarRitual.aiMessage && (
+                  <MarkdownText
+                    content={lunarRitual.aiMessage}
+                    className="text-text-secondary font-body italic text-sm leading-relaxed mb-4"
+                  />
+                )}
+                <textarea
+                  value={ritualText}
+                  onChange={(e) => setRitualText(e.target.value)}
+                  placeholder={lunarRitual.phase === "new_moon"
+                    ? "Scrivi la tua intenzione per questo ciclo..."
+                    : "Cosa lasci andare?"}
+                  rows={3}
+                  className="w-full bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body italic placeholder:text-text-muted/60 resize-none focus:outline-none border border-border/50 focus:border-amber/30 transition-colors mb-3"
+                />
+                <button
+                  onClick={saveRitual}
+                  disabled={!ritualText.trim() || ritualSaving}
+                  className={`w-full py-2.5 rounded-xl text-sm font-ui transition-all duration-300 ${
+                    ritualText.trim() && !ritualSaving
+                      ? lunarRitual.phase === "new_moon"
+                        ? "bg-verdigris text-bg-base dimensional hover:glow"
+                        : "bg-amber-glow text-bg-base dimensional hover:glow"
+                      : "bg-bg-surface text-text-muted border border-border/50"
+                  }`}
+                >
+                  {ritualSaving
+                    ? "..."
+                    : lunarRitual.phase === "new_moon"
+                    ? "Sigilla l'intenzione ✦"
+                    : "Rilascia ✦"}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Mood check-in rapido */}
         <motion.div
@@ -215,6 +316,13 @@ export default function OggiPage() {
                 <div className="text-2xl text-sienna mb-3">&#9681;</div>
                 <div className="text-sm font-bold font-display mb-1">Le tue ombre</div>
                 <div className="text-[10px] text-text-muted font-ui">Ciò che non vedi</div>
+              </div>
+            </Link>
+            <Link href="/compatibilita" className="shrink-0 w-44">
+              <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-sienna/3 dimensional h-full group hover:glow transition-all">
+                <div className="text-2xl text-verdigris mb-3">&#10038;</div>
+                <div className="text-sm font-bold font-display mb-1">Compatibilità</div>
+                <div className="text-[10px] text-text-muted font-ui">Due anime, una danza</div>
               </div>
             </Link>
             <Link href="/diario" className="shrink-0 w-44">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { MarkdownText } from "@/components/markdown-text";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Vision {
@@ -92,7 +93,7 @@ export default function VisionsPage() {
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                           <div className="px-8 pb-8 space-y-6">
                             <div className="glass rounded-xl p-6">
-                              <p className="text-text-secondary leading-relaxed italic font-body text-lg">{v.narrative}</p>
+                              <MarkdownText content={v.narrative} className="text-text-secondary leading-relaxed italic font-body text-lg" />
                             </div>
                             <div>
                               <h4 className={`text-xs font-bold font-ui tracking-wider ${c.text} mb-3`}>TAPPE COSMICHE</h4>

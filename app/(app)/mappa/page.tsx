@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MarkdownText } from "@/components/markdown-text";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -45,11 +46,24 @@ const planets = [
   { key: "northNodeSign", name: "Nodo Nord", symbol: "&#9738;", desc: "Il tuo destino — dove l'anima vuole andare" },
 ];
 
+interface Transit {
+  transitPlanet: string;
+  transitSymbol: string;
+  aspect: string;
+  aspectSymbol: string;
+  natalPlanet: string;
+  natalSymbol: string;
+  description: string;
+  interpretation: string;
+}
+
 export default function MappaPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showShadows, setShowShadows] = useState(false);
+  const [transits, setTransits] = useState<Transit[]>([]);
+  const [transitsMessage, setTransitsMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -57,6 +71,17 @@ export default function MappaPage() {
       .then((d) => {
         if (d.profile) setProfile(d.profile);
         setLoading(false);
+
+        // Load transits separately
+        if (d.profile?.onboardingComplete) {
+          fetch("/api/transits")
+            .then((r) => r.json())
+            .then((t) => {
+              if (t.transits) setTransits(t.transits);
+              if (t.message) setTransitsMessage(t.message);
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => setLoading(false));
   }, []);
@@ -223,6 +248,39 @@ export default function MappaPage() {
           </div>
         </motion.div>
 
+        {/* IL CIELO DI OGGI — Transiti in tempo reale */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, ease: premium }}
+          className="glass rounded-2xl p-5 mb-5 dimensional border border-verdigris/10"
+        >
+          <div className="text-[10px] text-verdigris font-ui tracking-[0.2em] mb-3">☉ IL CIELO DI OGGI</div>
+          {transits.length > 0 ? (
+            <div className="space-y-3">
+              {transits.map((t, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-bg-glass">
+                  <div className="text-verdigris text-lg shrink-0 font-body">
+                    {t.transitSymbol}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold font-display text-text-primary mb-0.5">
+                      {t.description}
+                    </div>
+                    <p className="text-xs text-text-secondary font-body italic leading-relaxed">
+                      {t.interpretation}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted font-body italic">
+              {transitsMessage || "Il cielo è quieto oggi. Un momento per integrare."}
+            </p>
+          )}
+        </motion.div>
+
         {/* Aspetti critici */}
         {profile.natalChartData?.criticalAspects && profile.natalChartData.criticalAspects.length > 0 && (
           <motion.div
@@ -260,11 +318,11 @@ export default function MappaPage() {
             </button>
           </div>
           {profile.shadowMapNarrative && (
-            <p className={`text-text-secondary font-body italic leading-relaxed mb-4 transition-all duration-500 ${
+            <div className={`text-text-secondary font-body italic leading-relaxed mb-4 transition-all duration-500 ${
               showShadows ? "" : "curiosity-blur"
             }`}>
-              {profile.shadowMapNarrative}
-            </p>
+              <MarkdownText content={profile.shadowMapNarrative} />
+            </div>
           )}
           <div className={`space-y-3 transition-all duration-500 ${showShadows ? "" : "curiosity-blur"}`}>
             {profile.shadows?.map((s, i) => (
@@ -288,9 +346,9 @@ export default function MappaPage() {
             className="glass rounded-2xl p-6 mb-5 dimensional glow border border-amber/10"
           >
             <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-4">&#9670; LA TUA MITOLOGIA</div>
-            <p className="text-text-primary font-body italic leading-relaxed text-lg">
-              &ldquo;{profile.mythologyNarrative}&rdquo;
-            </p>
+            <div className="text-text-primary font-body italic leading-relaxed text-lg">
+              &ldquo;<MarkdownText content={profile.mythologyNarrative} className="inline" />&rdquo;
+            </div>
           </motion.div>
         )}
 
@@ -303,7 +361,7 @@ export default function MappaPage() {
             className="glass rounded-2xl p-5 mb-5 dimensional"
           >
             <div className="text-[10px] text-verdigris font-ui tracking-[0.2em] mb-3">LO SPECCHIO COSMICO</div>
-            <p className="text-text-secondary font-body leading-relaxed italic">{profile.personalitySummary}</p>
+            <MarkdownText content={profile.personalitySummary} className="text-text-secondary font-body leading-relaxed italic" />
             {profile.awarenessScore != null && profile.awarenessScore > 0 && (
               <div className="mt-4 pt-3 border-t border-border/50">
                 <div className="flex items-center justify-between mb-1.5">
@@ -349,6 +407,30 @@ export default function MappaPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* PDF Report download */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, ease: premium }}
+          className="glass rounded-2xl p-5 mb-5 dimensional border border-amber/10"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-amber text-lg">✦</span>
+            <div>
+              <div className="text-sm font-bold font-display">Il tuo tema natale completo</div>
+              <div className="text-[10px] text-text-muted font-ui">PDF premium con tutti i tuoi pianeti e la tua mitologia</div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <a
+              href="/api/pdf-report"
+              className="flex-1 py-2.5 rounded-xl text-sm font-ui text-center bg-amber text-bg-base dimensional hover:glow transition-all"
+            >
+              Scarica il tuo tema ✦
+            </a>
           </div>
         </motion.div>
       </div>
