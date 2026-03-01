@@ -35,7 +35,7 @@ export default function LoginPage() {
             &#9670;
           </motion.div>
           <h1 className="text-2xl font-bold font-display mb-2">
-            <span className="text-gradient">unconsciousness</span>
+            <span className="text-amber">un</span><span className="text-gradient">consciousness</span>
           </h1>
           <p className="text-text-secondary font-body text-base italic">
             Il tuo cielo ti aspetta
@@ -67,7 +67,7 @@ export default function LoginPage() {
             </div>
             <div className="flex items-center gap-2 text-[10px] text-text-muted font-ui">
               <span className="text-sienna">&#9670;</span>
-              <span>Gratuito durante la beta.</span>
+              <span>20 crediti gratis alla registrazione.</span>
             </div>
           </div>
         </div>

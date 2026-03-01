@@ -11,8 +11,17 @@ export async function POST(req: NextRequest) {
 
   const { birthDate, birthTime, birthCity } = await req.json();
 
-  if (!birthDate) {
+  if (!birthDate || typeof birthDate !== "string") {
     return NextResponse.json({ error: "Data di nascita richiesta" }, { status: 400 });
+  }
+  if (isNaN(Date.parse(birthDate)) || new Date(birthDate) > new Date()) {
+    return NextResponse.json({ error: "Data di nascita non valida" }, { status: 400 });
+  }
+  if (birthTime && (typeof birthTime !== "string" || !/^\d{2}:\d{2}$/.test(birthTime))) {
+    return NextResponse.json({ error: "Orario non valido (formato HH:MM)" }, { status: 400 });
+  }
+  if (birthCity && (typeof birthCity !== "string" || birthCity.length > 200)) {
+    return NextResponse.json({ error: "Città non valida" }, { status: 400 });
   }
 
   const chart = await generateBirthChartReading({ birthDate, birthTime, birthCity });

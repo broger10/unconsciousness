@@ -3,6 +3,19 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateOnboardingQuestion, generateProfile } from "@/lib/ai";
 
+export async function DELETE() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+  }
+
+  await db.onboardingResponse.deleteMany({
+    where: { userId: session.user.id },
+  });
+
+  return NextResponse.json({ success: true });
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -10,6 +23,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { answer, step } = await req.json();
+
+  if (step !== undefined && (typeof step !== "number" || step < 0 || step > 15)) {
+    return NextResponse.json({ error: "Step non valido" }, { status: 400 });
+  }
+  if (answer !== undefined && (typeof answer !== "string" || answer.length > 5000)) {
+    return NextResponse.json({ error: "Risposta troppo lunga" }, { status: 400 });
+  }
 
   // Get profile for chart data
   const profile = await db.profile.findUnique({

@@ -26,6 +26,7 @@ interface UserData {
   name?: string;
   email?: string;
   image?: string;
+  credits?: number;
 }
 
 const cosmicLevels = [
@@ -85,8 +86,9 @@ export default function ProfiloPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
+      else alert("Errore nell'apertura del checkout. Riprova.");
     } catch {
-      /* silent */
+      alert("Errore di connessione. Riprova.");
     } finally {
       setUpgrading(false);
     }
@@ -97,8 +99,9 @@ export default function ProfiloPage() {
       const res = await fetch("/api/stripe/portal", { method: "POST" });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
+      else alert("Errore nell'apertura del portale. Riprova.");
     } catch {
-      /* silent */
+      alert("Errore di connessione. Riprova.");
     }
   };
 
@@ -134,7 +137,7 @@ export default function ProfiloPage() {
             {user?.image ? (
               <img
                 src={user.image}
-                alt=""
+                alt={user?.name || "Profilo utente"}
                 className="w-14 h-14 rounded-2xl object-cover border-2 border-amber/20"
               />
             ) : (
@@ -210,6 +213,30 @@ export default function ProfiloPage() {
           </div>
         </motion.div>
 
+        {/* Crediti */}
+        {!sub?.isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, ease: premium }}
+            className="glass rounded-2xl p-5 mb-5 dimensional border border-verdigris/10"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] text-verdigris font-ui tracking-[0.2em]">&#10038; I TUOI CREDITI</div>
+              <span className="text-xl font-bold font-display text-verdigris">{user?.credits ?? 0}</span>
+            </div>
+            <p className="text-xs text-text-muted font-ui mb-3">
+              Ogni azione AI costa crediti. Passa a Premium per accesso illimitato.
+            </p>
+            <div className="space-y-1 text-[10px] text-text-muted font-ui">
+              <div className="flex justify-between"><span>Oroscopo giornaliero</span><span>3 crediti</span></div>
+              <div className="flex justify-between"><span>Chat con l&apos;oracolo</span><span>5 crediti</span></div>
+              <div className="flex justify-between"><span>Riflessione diario</span><span>3 crediti</span></div>
+              <div className="flex justify-between"><span>3 Visioni del destino</span><span>15 crediti</span></div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Account */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -284,7 +311,7 @@ export default function ProfiloPage() {
           ) : (
             <div>
               <p className="text-sm text-text-secondary font-body mb-4">
-                Sblocca l&apos;oracolo illimitato, la mappa dell&apos;ombra completa, le visioni del destino e molto altro.
+                Accesso illimitato a tutte le funzioni AI. Niente pi&ugrave; crediti da contare.
               </p>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
@@ -328,7 +355,7 @@ export default function ProfiloPage() {
               <div className="flex items-center justify-between py-2 border-b border-border/30">
                 <span className="text-xs text-text-muted font-ui">Data</span>
                 <span className="text-sm text-text-primary font-ui">
-                  {new Date(profile.birthDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+                  {new Date(profile.birthDate + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
                 </span>
               </div>
               {profile.birthTime && (
@@ -390,7 +417,7 @@ export default function ProfiloPage() {
 
         {/* Version */}
         <div className="text-center text-[10px] text-text-muted/50 font-ui pb-4">
-          unconsciousness v1.0 &middot; il cosmo ti aspetta
+          <span className="text-amber">un</span>consciousness v1.0 &middot; il cosmo ti aspetta
         </div>
       </div>
     </div>

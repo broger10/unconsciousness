@@ -62,9 +62,12 @@ export default function DiarioPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  const [error, setError] = useState("");
+
   const saveEntry = async () => {
     if (!newEntry.trim() || saving) return;
     setSaving(true);
+    setError("");
 
     try {
       const res = await fetch("/api/journal", {
@@ -73,13 +76,19 @@ export default function DiarioPage() {
         body: JSON.stringify({ content: newEntry }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setError(res.status === 402
+          ? "Crediti esauriti. Passa a Premium dal tuo profilo."
+          : data.error || "Errore nel salvataggio.");
+        return;
+      }
       if (data.journal) {
         setJournals((prev) => [data.journal, ...prev]);
         setNewEntry("");
         setExpandedReflection(data.journal.id);
       }
     } catch {
-      /* silent */
+      setError("Errore di connessione. Riprova.");
     } finally {
       setSaving(false);
     }
@@ -158,8 +167,8 @@ export default function DiarioPage() {
             className="w-full bg-transparent text-text-primary font-body text-lg italic placeholder:text-text-muted/60 resize-none focus:outline-none leading-relaxed mb-3"
           />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-text-muted font-ui">
-              {newEntry.length > 0 ? `${newEntry.length} caratteri` : ""}
+            <span className={`text-[10px] font-ui ${newEntry.length > 10000 ? "text-sienna" : "text-text-muted"}`}>
+              {newEntry.length > 0 ? `${newEntry.length}/10000` : ""}
             </span>
             <button
               onClick={saveEntry}
@@ -180,6 +189,11 @@ export default function DiarioPage() {
               )}
             </button>
           </div>
+          {error && (
+            <div className="mt-3 text-xs text-sienna font-ui bg-sienna/10 rounded-lg px-3 py-2">
+              {error}
+            </div>
+          )}
         </motion.div>
 
         {/* Filters */}

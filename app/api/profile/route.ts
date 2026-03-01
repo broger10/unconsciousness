@@ -15,7 +15,7 @@ export async function GET() {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, image: true },
+    select: { name: true, email: true, image: true, credits: true },
   });
 
   // Generate daily insight if profile exists
@@ -34,7 +34,7 @@ export async function GET() {
     });
 
     try {
-      dailyInsight = await generateDailyInsight(
+      const result = await generateDailyInsight(
         {
           sunSign: profile.sunSign || undefined,
           moonSign: profile.moonSign || undefined,
@@ -47,6 +47,7 @@ export async function GET() {
         recentCheckins,
         recentJournals
       );
+      dailyInsight = result.horoscope;
     } catch {
       dailyInsight = "";
     }

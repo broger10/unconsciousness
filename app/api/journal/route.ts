@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateJournalReflection } from "@/lib/ai";
+import { useCredits } from "@/lib/credits";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -10,8 +11,16 @@ export async function POST(req: NextRequest) {
   }
 
   const { content } = await req.json();
-  if (!content?.trim()) {
+  if (!content || typeof content !== "string" || !content.trim()) {
     return NextResponse.json({ error: "Contenuto vuoto" }, { status: 400 });
+  }
+  if (content.length > 10000) {
+    return NextResponse.json({ error: "Contenuto troppo lungo (max 10000 caratteri)" }, { status: 400 });
+  }
+
+  const hasCredits = await useCredits(session.user.id, "journal_reflection");
+  if (!hasCredits) {
+    return NextResponse.json({ error: "Crediti esauriti", needsUpgrade: true }, { status: 402 });
   }
 
   const profile = await db.profile.findUnique({

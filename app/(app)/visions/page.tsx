@@ -27,14 +27,24 @@ export default function VisionsPage() {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
 
+  const [error, setError] = useState("");
+
   const generateVisions = async () => {
     if (!topic.trim() || loading) return;
-    setLoading(true); setVisions([]);
+    setLoading(true); setVisions([]); setError("");
     try {
       const res = await fetch("/api/visions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic }) });
       const data = await res.json();
+      if (!res.ok) {
+        setError(res.status === 402
+          ? "Crediti esauriti. Questa funzione costa 15 crediti. Passa a Premium dal tuo profilo."
+          : data.error || "Errore nella generazione.");
+        return;
+      }
       if (data.visions) setVisions(data.visions);
-    } catch { /* */ } finally { setLoading(false); }
+    } catch {
+      setError("Errore di connessione. Riprova.");
+    } finally { setLoading(false); }
   };
 
   return (
@@ -58,6 +68,15 @@ export default function VisionsPage() {
             </Button>
           </div>
         </motion.div>
+
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
+            <div className="glass rounded-2xl p-6 max-w-md mx-auto border border-sienna/20">
+              <div className="text-2xl text-sienna mb-3">&#9681;</div>
+              <p className="text-sm text-sienna font-ui">{error}</p>
+            </div>
+          </motion.div>
+        )}
 
         {loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">

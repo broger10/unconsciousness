@@ -12,6 +12,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  credits       Int       @default(20)
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
@@ -124,6 +125,8 @@ model OnboardingResponse {
   answer     String   @db.Text
   aiAnalysis String?  @db.Text
   createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Vision {
@@ -140,6 +143,9 @@ model Vision {
   emoji         String   @default("✨")
   sessionId     String
   createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
 }
 
 model DailyCheckin {
@@ -153,6 +159,9 @@ model DailyCheckin {
   aiInsight      String?  @db.Text
   transitContext String?  @db.Text  // What transits were active
   createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Insight {
@@ -166,6 +175,9 @@ model Insight {
   source      String?  // "natal", "transit", "checkin", "journal", "chat"
   urgency     Int      @default(0) // 0-10, how cosmically significant
   createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, type, createdAt])
 }
 
 model Journal {
@@ -178,4 +190,7 @@ model Journal {
   mood           String?             // Detected mood
   themes         String[] @default([])
   createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }

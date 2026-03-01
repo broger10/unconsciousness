@@ -66,18 +66,27 @@ export default function ChiediPage() {
       });
       const data = await res.json();
 
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId
-            ? { ...m, id: data.id || tempId, content: data.response || "" }
-            : m
-        )
-      );
+      if (!res.ok) {
+        const errorMsg = res.status === 402
+          ? "Crediti esauriti. Passa a Premium dal tuo profilo per continuare."
+          : data.error || "Errore nella risposta dell'oracolo.";
+        setMessages((prev) =>
+          prev.map((m) => m.id === tempId ? { ...m, content: errorMsg } : m)
+        );
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? { ...m, id: data.id || tempId, content: data.response || "" }
+              : m
+          )
+        );
+      }
     } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === tempId
-            ? { ...m, content: "Le stelle sono momentaneamente velate. Riprova." }
+            ? { ...m, content: "Errore di connessione. Riprova tra poco." }
             : m
         )
       );
@@ -226,6 +235,7 @@ export default function ChiediPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Chiedi all'oracolo..."
+            aria-label="Chiedi all'oracolo"
             rows={1}
             className="flex-1 bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body placeholder:text-text-muted resize-none border border-border/50 focus:border-amber/30 focus:outline-none transition-colors"
             style={{ maxHeight: "120px" }}

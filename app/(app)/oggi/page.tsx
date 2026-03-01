@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
@@ -17,28 +16,31 @@ const moodSymbols = [
 
 export default function OggiPage() {
   const [horoscope, setHoroscope] = useState("");
+  const [cosmicEnergy, setCosmicEnergy] = useState<number | null>(null);
   const [profile, setProfile] = useState<{
     sunSign?: string; moonSign?: string; risingSign?: string;
     awarenessScore?: number; strengths?: string[]; shadows?: string[];
-    onboardingComplete?: boolean;
   } | null>(null);
   const [userName, setUserName] = useState("");
+  const [credits, setCredits] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [todayMood, setTodayMood] = useState(0);
   const [moodSaved, setMoodSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [horoscopeLoading, setHoroscopeLoading] = useState(false);
+  const [horoscopeLoading, setHoroscopeLoading] = useState(true);
 
   useEffect(() => {
+    // All 3 API calls in parallel — no waterfall
     Promise.all([
-      fetch("/api/profile").then((r) => r.json()),
+      fetch("/api/profile").then((r) => r.json()).catch(() => ({})),
       fetch("/api/checkin").then((r) => r.json()).catch(() => ({ streak: 0, checkins: [] })),
-    ]).then(([profileData, checkinData]) => {
+      fetch("/api/horoscope").then((r) => r.json()).catch(() => ({})),
+    ]).then(([profileData, checkinData, horoscopeData]) => {
       if (profileData.profile) setProfile(profileData.profile);
       if (profileData.user?.name) setUserName(profileData.user.name.split(" ")[0]);
+      if (profileData.user?.credits !== undefined) setCredits(profileData.user.credits);
       if (checkinData.streak) setStreak(checkinData.streak);
 
-      // Check if already checked in today
       if (checkinData.checkins?.length > 0) {
         const lastCheckin = new Date(checkinData.checkins[0].createdAt);
         const today = new Date();
@@ -47,31 +49,32 @@ export default function OggiPage() {
           setMoodSaved(true);
         }
       }
-      setLoading(false);
 
-      // Load horoscope separately (can be slow due to AI)
-      if (profileData.profile?.onboardingComplete) {
-        setHoroscopeLoading(true);
-        fetch("/api/horoscope")
-          .then((r) => r.json())
-          .then((d) => { if (d.horoscope) setHoroscope(d.horoscope); })
-          .catch(() => {})
-          .finally(() => setHoroscopeLoading(false));
-      }
-    }).catch(() => setLoading(false));
+      if (horoscopeData.horoscope) setHoroscope(horoscopeData.horoscope);
+      else if (horoscopeData.needsUpgrade) setHoroscope("I tuoi crediti sono esauriti. Passa a Premium per l'oroscopo quotidiano.");
+      if (horoscopeData.cosmicEnergy != null) setCosmicEnergy(horoscopeData.cosmicEnergy);
+
+      setLoading(false);
+      setHoroscopeLoading(false);
+    }).catch(() => { setLoading(false); setHoroscopeLoading(false); });
   }, []);
 
   const saveMood = async (mood: number) => {
     setTodayMood(mood);
     setMoodSaved(true);
     try {
-      await fetch("/api/checkin", {
+      const res = await fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mood, energy: mood, responses: {} }),
+        body: JSON.stringify({ mood, energy: mood }),
       });
-      setStreak((s) => s + 1);
-    } catch { /* */ }
+      if (res.ok) {
+        setStreak((s) => s + 1);
+        if (credits !== null) setCredits((c) => c !== null ? Math.max(0, c - 2) : c);
+      }
+    } catch {
+      // Check-in already saved optimistically
+    }
   };
 
   if (loading) {
@@ -85,14 +88,12 @@ export default function OggiPage() {
     );
   }
 
-  if (!profile?.onboardingComplete) {
+  if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ease: premium }} className="text-center max-w-md">
-          <div className="text-6xl text-amber mb-6 breathe">&#9670;</div>
-          <h1 className="text-4xl font-bold font-display mb-4">Il tuo cielo<br /><span className="text-gradient">ti aspetta</span></h1>
-          <p className="text-text-secondary mb-10 font-body text-lg italic">Tre minuti per aprire il portale della consapevolezza cosmica.</p>
-          <Link href="/onboarding"><Button size="lg" className="text-lg px-12 py-6 breathe dimensional">Apri il portale</Button></Link>
+      <div className="min-h-screen flex items-center justify-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+          <div className="text-4xl text-amber ember-pulse mb-4">&#9670;</div>
+          <p className="text-text-muted text-sm font-ui">Preparo il tuo cielo...</p>
         </motion.div>
       </div>
     );
@@ -100,11 +101,14 @@ export default function OggiPage() {
 
   const today = new Date();
   const dateStr = today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+  const energyColor = cosmicEnergy != null
+    ? cosmicEnergy >= 70 ? "text-amber" : cosmicEnergy >= 40 ? "text-verdigris" : "text-sienna"
+    : "text-text-muted";
 
   return (
     <div className="min-h-screen relative">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-        {/* Header — saluto + data + segni */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -115,12 +119,26 @@ export default function OggiPage() {
             <h1 className="text-2xl font-bold font-display">
               {userName ? `Ciao, ${userName}` : "Buongiorno"}
             </h1>
-            {streak > 0 && (
-              <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-                <span className="text-amber text-xs ember-pulse">&#9670;</span>
-                <span className="text-amber text-xs font-bold font-ui">{streak}</span>
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {cosmicEnergy != null && (
+                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
+                  <span className={`text-xs ${energyColor}`}>&#9670;</span>
+                  <span className={`text-xs font-bold font-ui ${energyColor}`}>{cosmicEnergy}</span>
+                </span>
+              )}
+              {credits !== null && credits < 100 && (
+                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
+                  <span className="text-verdigris text-xs">&#10038;</span>
+                  <span className="text-verdigris text-xs font-bold font-ui">{credits}</span>
+                </span>
+              )}
+              {streak > 0 && (
+                <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
+                  <span className="text-amber text-xs ember-pulse">&#9670;</span>
+                  <span className="text-amber text-xs font-bold font-ui">{streak}</span>
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-text-muted text-sm font-ui capitalize">{dateStr}</p>
           <div className="flex items-center gap-3 mt-2 text-xs text-text-muted font-ui">
@@ -131,6 +149,38 @@ export default function OggiPage() {
             <span>&#8593; {profile.risingSign}</span>
           </div>
         </motion.div>
+
+        {/* Energia cosmica del giorno */}
+        {cosmicEnergy != null && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, ease: premium }}
+            className="glass rounded-2xl p-5 mb-5 dimensional"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] text-text-muted font-ui tracking-[0.2em]">ENERGIA COSMICA</div>
+              <span className={`text-lg font-bold font-display ${energyColor}`}>{cosmicEnergy}%</span>
+            </div>
+            <div className="h-2 bg-bg-surface rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${cosmicEnergy}%` }}
+                transition={{ delay: 0.3, duration: 1, ease: premium }}
+                className={`h-full rounded-full ${
+                  cosmicEnergy >= 70 ? "bg-gradient-to-r from-amber-dim to-amber" :
+                  cosmicEnergy >= 40 ? "bg-gradient-to-r from-verdigris-dim to-verdigris" :
+                  "bg-gradient-to-r from-sienna-dim to-sienna"
+                }`}
+              />
+            </div>
+            <p className="text-[10px] text-text-muted font-ui mt-2">
+              {cosmicEnergy >= 70 ? "Giornata di forte allineamento. Segui i tuoi impulsi." :
+               cosmicEnergy >= 40 ? "Transiti neutri. Buon momento per riflettere." :
+               "Tensione nei transiti. Pratica pazienza e introspezione."}
+            </p>
+          </motion.div>
+        )}
 
         {/* Oroscopo del giorno */}
         <motion.div
@@ -200,7 +250,7 @@ export default function OggiPage() {
               <div className="rounded-2xl p-5 border border-amber/10 bg-gradient-to-br from-amber/6 to-verdigris/3 dimensional h-full group hover:glow transition-all">
                 <div className="text-2xl text-amber mb-3">&#10038;</div>
                 <div className="text-sm font-bold font-display mb-1">Chiedi all&apos;oracolo</div>
-                <div className="text-[10px] text-text-muted font-ui">L&apos;AI ti ascolta</div>
+                <div className="text-[10px] text-text-muted font-ui">Ogni domanda apre una porta</div>
               </div>
             </Link>
             <Link href="/visions" className="shrink-0 w-44">
@@ -214,7 +264,7 @@ export default function OggiPage() {
               <div className="rounded-2xl p-5 border border-sienna/10 bg-gradient-to-br from-sienna/6 to-amber/3 dimensional h-full group hover:glow transition-all">
                 <div className="text-2xl text-sienna mb-3">&#9681;</div>
                 <div className="text-sm font-bold font-display mb-1">Le tue ombre</div>
-                <div className="text-[10px] text-text-muted font-ui">Ciò che non vedi</div>
+                <div className="text-[10px] text-text-muted font-ui">Ci&ograve; che non vedi</div>
               </div>
             </Link>
             <Link href="/diario" className="shrink-0 w-44">
@@ -227,7 +277,7 @@ export default function OggiPage() {
           </div>
         </motion.div>
 
-        {/* Doni e ombre — 2 colonne */}
+        {/* Doni e ombre */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

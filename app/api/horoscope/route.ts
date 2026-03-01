@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateDailyInsight } from "@/lib/ai";
+import { useCredits } from "@/lib/credits";
 
 export async function GET() {
   const session = await auth();
@@ -17,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ horoscope: null, date: new Date().toISOString() });
   }
 
-  // Check if we already generated today's horoscope
+  // Check if we already generated today's horoscope (cached = free)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -34,26 +35,34 @@ export async function GET() {
   if (existing) {
     return NextResponse.json({
       horoscope: existing.content,
+      cosmicEnergy: existing.urgency, // We store cosmicEnergy in urgency field
       date: existing.createdAt.toISOString(),
       cached: true,
     });
   }
 
-  // Generate new daily horoscope
-  const recentCheckins = await db.dailyCheckin.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
+  // Credits check — only for new generation (cached is free)
+  const hasCredits = await useCredits(session.user.id, "daily_horoscope");
+  if (!hasCredits) {
+    return NextResponse.json({ horoscope: null, needsUpgrade: true, date: new Date().toISOString() });
+  }
 
-  const recentJournals = await db.journal.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 3,
-  });
+  // Parallelize context fetching
+  const [recentCheckins, recentJournals] = await Promise.all([
+    db.dailyCheckin.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    db.journal.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+  ]);
 
   try {
-    const horoscope = await generateDailyInsight(
+    const result = await generateDailyInsight(
       {
         sunSign: profile.sunSign || undefined,
         moonSign: profile.moonSign || undefined,
@@ -67,19 +76,21 @@ export async function GET() {
       recentJournals
     );
 
-    // Cache as daily insight
+    // Cache as daily insight — store cosmicEnergy in urgency field
     await db.insight.create({
       data: {
         userId: session.user.id,
         type: "daily",
         title: `Oroscopo ${today.toLocaleDateString("it-IT")}`,
-        content: horoscope,
+        content: result.horoscope,
+        urgency: result.cosmicEnergy,
         source: "natal",
       },
     });
 
     return NextResponse.json({
-      horoscope,
+      horoscope: result.horoscope,
+      cosmicEnergy: result.cosmicEnergy,
       date: new Date().toISOString(),
       cached: false,
     });

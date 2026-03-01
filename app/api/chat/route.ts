@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { useCredits } from "@/lib/credits";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -12,8 +13,16 @@ export async function POST(req: NextRequest) {
   }
 
   const { message } = await req.json();
-  if (!message?.trim()) {
+  if (!message || typeof message !== "string" || !message.trim()) {
     return NextResponse.json({ error: "Messaggio vuoto" }, { status: 400 });
+  }
+  if (message.length > 5000) {
+    return NextResponse.json({ error: "Messaggio troppo lungo (max 5000 caratteri)" }, { status: 400 });
+  }
+
+  const hasCredits = await useCredits(session.user.id, "chat_message");
+  if (!hasCredits) {
+    return NextResponse.json({ error: "Crediti esauriti", needsUpgrade: true }, { status: 402 });
   }
 
   const profile = await db.profile.findUnique({

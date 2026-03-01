@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateVisions } from "@/lib/ai";
+import { useCredits } from "@/lib/credits";
 import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -12,8 +13,16 @@ export async function POST(req: NextRequest) {
 
   const { topic } = await req.json();
 
-  if (!topic || typeof topic !== "string") {
+  if (!topic || typeof topic !== "string" || !topic.trim()) {
     return NextResponse.json({ error: "Topic richiesto" }, { status: 400 });
+  }
+  if (topic.length > 2000) {
+    return NextResponse.json({ error: "Topic troppo lungo (max 2000 caratteri)" }, { status: 400 });
+  }
+
+  const hasCredits = await useCredits(session.user.id, "visions");
+  if (!hasCredits) {
+    return NextResponse.json({ error: "Crediti esauriti", needsUpgrade: true }, { status: 402 });
   }
 
   const profile = await db.profile.findUnique({

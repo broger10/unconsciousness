@@ -288,12 +288,18 @@ export async function generateDailyInsight(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 500,
-    system: `Sei un oracolo cosmico che legge i pattern nascosti. Genera un insight giornaliero che:
-- Connette i transiti di OGGI con il tema natale della persona
-- Rivela un pattern che la persona non ha ancora visto
-- È radicalmente specifico (non Barnum effect)
-- Suona come una profezia sussurrata, non come un oroscopo da giornale
-- 3-4 frasi massimo. In italiano. Poetico ma preciso.`,
+    system: `Sei un oracolo cosmico che legge i pattern nascosti. Rispondi SEMPRE in questo formato JSON esatto:
+{"horoscope":"...testo oroscopo...","cosmicEnergy":N}
+
+Dove:
+- horoscope: l'insight giornaliero (3-4 frasi, italiano, poetico ma preciso, connesso ai transiti di oggi e al tema natale)
+- cosmicEnergy: un numero intero da 0 a 100 che indica l'allineamento cosmico del giorno per questa persona (basato sui transiti odierni in rapporto al tema natale: 80-100 = forte allineamento, 50-79 = neutro, 0-49 = tensione/sfida)
+
+L'insight deve:
+- Connettere i transiti di OGGI con il tema natale della persona
+- Rivelare un pattern che la persona non ha ancora visto
+- Essere radicalmente specifico (no Barnum effect)
+- Suonare come una profezia sussurrata, non come un oroscopo da giornale`,
     messages: [
       {
         role: "user",
@@ -306,12 +312,27 @@ ${checkinsContext || "Nessuno"}
 
 ${journalContext ? `Diario recente:\n${journalContext}` : ""}
 
-Genera l'insight cosmico di oggi.`,
+Data di oggi: ${new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+
+Genera l'insight cosmico di oggi in formato JSON.`,
       },
     ],
   });
 
-  return (message.content[0] as { type: "text"; text: string }).text;
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        horoscope: parsed.horoscope || text,
+        cosmicEnergy: Math.min(100, Math.max(0, parseInt(parsed.cosmicEnergy) || 50)),
+      };
+    }
+  } catch {
+    // Fallback: return raw text with default energy
+  }
+  return { horoscope: text, cosmicEnergy: 50 };
 }
 
 // ============================================

@@ -16,7 +16,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="text-amber text-lg">&#9670;</span>
-            <span className="text-base font-bold font-display text-gradient">unconsciousness</span>
+            <span className="text-base font-bold font-display"><span className="text-amber">un</span><span className="text-gradient">consciousness</span></span>
           </Link>
           <div className="flex items-center gap-4">
             <a
@@ -43,12 +43,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
             <div className="flex items-center gap-2">
               <span className="text-amber">&#9670;</span>
-              <span className="font-display text-gradient text-sm">unconsciousness</span>
+              <span className="font-display text-sm"><span className="text-amber">un</span><span className="text-gradient">consciousness</span></span>
             </div>
             <div className="flex items-center gap-6 text-xs text-text-muted font-ui">
-              <a href="#" className="hover:text-text-secondary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-text-secondary transition-colors">Termini di Servizio</a>
-              <a href="#" className="hover:text-text-secondary transition-colors">Contatti</a>
+              <a href="mailto:andrea.brognera@icloud.com" className="hover:text-text-secondary transition-colors">Contatti</a>
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-border/30">
@@ -56,7 +54,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               I tuoi dati cosmici non vengono mai condivisi, venduti o utilizzati per addestrare modelli AI. Mai.
             </p>
             <p className="text-text-muted/60 text-[10px] font-ui">
-              &copy; {new Date().getFullYear()} unconsciousness. Tutti i diritti riservati.
+              &copy; {new Date().getFullYear()} <span className="text-amber">un</span>consciousness. Tutti i diritti riservati.
             </p>
           </div>
         </div>

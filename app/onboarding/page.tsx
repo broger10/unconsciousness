@@ -44,9 +44,53 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [messages, setMessages] = useState<{ type: "question" | "answer"; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initLoading, setInitLoading] = useState(true);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // On mount: check if user has existing birth data → skip birth form
+  useEffect(() => {
+    const checkExisting = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        const data = await res.json();
+
+        // Already complete? Redirect (server layout handles this, but safety net)
+        if (data.profile?.onboardingComplete) {
+          window.location.href = "/oggi";
+          return;
+        }
+
+        // Has birth data? Skip birth form, resume questions
+        if (data.profile?.sunSign) {
+          setChartData({
+            sunSign: data.profile.sunSign,
+            moonSign: data.profile.moonSign || "",
+            risingSign: data.profile.risingSign || "",
+            coreIdentity: "",
+            emotionalBlueprint: "",
+            deepestWound: "",
+          });
+
+          // Clear old responses for a clean restart, then start questions
+          await fetch("/api/onboarding", { method: "DELETE" });
+          const qRes = await fetch("/api/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ step: 0 }),
+          });
+          const qData = await qRes.json();
+          setCurrentQuestion(qData.question);
+          setMessages([{ type: "question", text: qData.question }]);
+          setStep(1);
+          setPhase("questions");
+        }
+      } catch { /* fresh start */ }
+      setInitLoading(false);
+    };
+    checkExisting();
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,6 +143,18 @@ export default function OnboardingPage() {
       }
     } catch { /* */ } finally { setLoading(false); }
   };
+
+  if (initLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="fixed inset-0 cosmic-gradient pointer-events-none" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center relative z-10">
+          <div className="text-4xl text-amber ember-pulse mb-4">&#9670;</div>
+          <p className="text-text-muted text-sm font-ui">Preparo il tuo percorso...</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">

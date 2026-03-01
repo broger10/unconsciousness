@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateCosmicCheckinInsight } from "@/lib/ai";
+import { useCredits } from "@/lib/credits";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -10,6 +11,19 @@ export async function POST(req: NextRequest) {
   }
 
   const { mood, energy, cosmicEnergy, reflection } = await req.json();
+
+  if (typeof mood !== "number" || mood < 1 || mood > 5 || !Number.isInteger(mood)) {
+    return NextResponse.json({ error: "Mood non valido (1-5)" }, { status: 400 });
+  }
+  if (typeof energy !== "number" || energy < 1 || energy > 5 || !Number.isInteger(energy)) {
+    return NextResponse.json({ error: "Energia non valida (1-5)" }, { status: 400 });
+  }
+  if (cosmicEnergy != null && (typeof cosmicEnergy !== "number" || cosmicEnergy < 1 || cosmicEnergy > 5)) {
+    return NextResponse.json({ error: "Energia cosmica non valida (1-5)" }, { status: 400 });
+  }
+  if (reflection && (typeof reflection !== "string" || reflection.length > 2000)) {
+    return NextResponse.json({ error: "Riflessione troppo lunga (max 2000)" }, { status: 400 });
+  }
 
   const profile = await db.profile.findUnique({
     where: { userId: session.user.id },
@@ -22,7 +36,8 @@ export async function POST(req: NextRequest) {
   });
 
   let aiInsight: string | null = null;
-  if (profile) {
+  const hasCredits = await useCredits(session.user.id, "checkin_insight");
+  if (profile && hasCredits) {
     aiInsight = await generateCosmicCheckinInsight(
       {
         sunSign: profile.sunSign || undefined,
