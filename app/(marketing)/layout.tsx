@@ -37,7 +37,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </div>
       </motion.nav>
 
-      <main>{children}</main>
+      <main className="pt-14">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-border/50 py-12 px-6">
