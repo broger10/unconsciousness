@@ -35,7 +35,7 @@ export async function GET() {
   if (existing) {
     return NextResponse.json({
       horoscope: existing.content,
-      cosmicEnergy: existing.urgency, // We store cosmicEnergy in urgency field
+      cosmicEnergy: existing.urgency || null, // Old insights have urgency=0 default, treat as no data
       date: existing.createdAt.toISOString(),
       cached: true,
     });

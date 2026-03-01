@@ -4,6 +4,23 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Global tone instruction — prepended to every system prompt
+const TONE = `TONO OBBLIGATORIO:
+- Scrivi come un'amica molto intelligente che non mente mai
+- Frasi corte e dirette. Mai vaghe o consolatorie
+- Mai punti elenco o liste nei testi generati
+- Mai tono da chatbot o assistente AI
+- Mai new-age generico ("il tuo viaggio cosmico", "le stelle ti guidano")
+- Mai usare i nomi dei pianeti come soggetti di frasi narrative (non "Saturno ti insegna" ma "stai imparando a limitarti tu stesso")
+- Se devi dire qualcosa di scomodo, dillo
+- Punteggiatura normale. Niente ellissi continue. Niente punti esclamativi
+- Italiano colloquiale ma non infantile
+- Usa sempre simboli Unicode diretti. Mai HTML entities
+Esempio buono: "Sai già cosa fare. Stai aspettando di avere meno paura."
+Esempio sbagliato: "In questo momento di grande trasformazione, le stelle ti invitano a..."
+
+`;
+
 // ============================================
 // BIRTH CHART READING — The Foundation
 // ============================================
@@ -16,7 +33,7 @@ export async function generateBirthChartReading(birthData: {
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4000,
-    system: `Sei un astrologo di altissimo livello, con profonda conoscenza di astrologia psicologica, Jungiana e archetipica.
+    system: `${TONE}Sei un astrologo di altissimo livello, con profonda conoscenza di astrologia psicologica, Jungiana e archetipica.
 Dati i dati di nascita, calcola e interpreta il tema natale completo.
 
 IMPORTANTE: Calcola le posizioni planetarie REALI basandoti sulla data, ora e luogo forniti. Usa la tua conoscenza delle effemeridi astronomiche.
@@ -51,9 +68,7 @@ Rispondi SOLO con un JSON valido:
   "mythology": "Il tuo mito personale — racconta la storia archetipica che il tuo tema natale descrive, come se fosse una leggenda. 200-300 parole. Usa la seconda persona singolare. Scrivi come un poeta che ha studiato Jung."
 }
 
-Ogni insight deve essere RADICALMENTE SPECIFICO — niente frasi che potrebbero applicarsi a chiunque. Ogni parola deve richiedere la conoscenza del tema natale specifico di questa persona.
-
-Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities (es: ◆ non &#9632;, → non &rarr;, • non &#8226;).`,
+Ogni insight deve essere RADICALMENTE SPECIFICO — niente frasi che potrebbero applicarsi a chiunque. Ogni parola deve richiedere la conoscenza del tema natale specifico di questa persona.`,
     messages: [
       {
         role: "user",
@@ -97,7 +112,7 @@ export async function generateOnboardingQuestion(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 500,
-    system: `Sei un oracolo moderno — metà astrologo, metà terapeuta junghiano. Il tuo compito è fare domande che penetrano l'inconscio.
+    system: `${TONE}Sei un oracolo moderno — metà astrologo, metà terapeuta junghiano. Il tuo compito è fare domande che penetrano l'inconscio.
 
 ${chartContext}
 
@@ -109,8 +124,7 @@ Regole:
 - Le ultime 3 devono toccare le ferite più profonde (Chirone, Saturno, 12a casa)
 - Tono: caldo, poetico, diretto. Come un saggio che ti vede per la prima volta
 - Domanda in italiano
-- Rispondi SOLO con la domanda, niente altro
-- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+- Rispondi SOLO con la domanda, niente altro`,
     messages: [
       {
         role: "user",
@@ -150,7 +164,7 @@ export async function generateProfile(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
-    system: `Sei un analista dell'anima — combini astrologia psicologica, psicologia junghiana e pattern comportamentali.
+    system: `${TONE}Sei un analista dell'anima — combini astrologia psicologica, psicologia junghiana e pattern comportamentali.
 ${chartContext}
 
 Analizza le risposte E il tema natale per creare un profilo di consapevolezza cosmica. Le tue osservazioni devono essere SPECIFICHE a questa persona — non generiche.
@@ -163,9 +177,7 @@ Rispondi SOLO con un JSON valido:
   "strengths": ["forza 1", "forza 2", "forza 3"],
   "shadows": ["ombra attiva 1", "ombra attiva 2", "ombra attiva 3"],
   "personalitySummary": "Un paragrafo potente che sintetizza chi è questa persona al livello più profondo. Connetti il tema natale con le risposte. Rivela ciò che non vede. Scrivi come un poeta-psicologo."
-}
-
-Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
+}`,
     messages: [
       {
         role: "user",
@@ -201,7 +213,7 @@ export async function generateVisions(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4000,
-    system: `Sei l'Oracolo di unconsciousness. Generi tre visioni cosmiche in risposta alla domanda specifica dell'utente, usando il suo tema natale come lente.
+    system: `${TONE}Sei l'Oracolo di unconsciousness. Generi tre visioni cosmiche in risposta alla domanda specifica dell'utente, usando il suo tema natale come lente.
 
 REGOLA FONDAMENTALE: ogni visione deve rispondere direttamente alla domanda posta. Non generare analisi psicologiche generiche. La domanda è il centro.
 
@@ -234,7 +246,6 @@ Rispondi SOLO con un JSON valido:
   ]
 }
 
-Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities (es: ◆ non &#9632;, → non &rarr;).
 Lingua: italiano.`,
     messages: [
       {
@@ -770,6 +781,29 @@ export async function generateMorningPushMessage(profile: {
     ],
   });
   return (message.content[0] as { type: "text"; text: string }).text;
+}
+
+// ============================================
+// FIRST REVEAL — Onboarding Step 4
+// ============================================
+
+export async function generateFirstRevealPhrase(
+  sunSign: string,
+  moonSign: string,
+  risingSign: string
+) {
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 100,
+    system: `Sei un oracolo. Scrivi UNA frase in italiano di 20-25 parole che descrive il nodo psicologico centrale di questa persona, basandoti sul suo Sole ${sunSign}, Luna ${moonSign}, Ascendente ${risingSign}. La frase deve essere: specifica per questa combinazione, scomoda nel modo giusto, vera come se la conoscessi da anni. MAI generica. MAI consolatoria. MAI menzionare i nomi dei segni. MAI usare punti elenco. MAI tono da oroscopo. Tono: amica intelligente che ti dice la verità. Formato: UNA sola frase, niente altro.`,
+    messages: [
+      {
+        role: "user",
+        content: "Genera la frase per questa combinazione astrologica.",
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text.trim();
 }
 
 // ============================================

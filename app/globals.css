@@ -349,6 +349,36 @@ body {
   animation: scroll-hint 2s ease-in-out infinite;
 }
 
+/* Onboarding — CSS-only animations */
+@keyframes onb-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes onb-star-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes onb-star-dot {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 0.4; transform: scale(1); }
+}
+
+.onb-fade-in {
+  opacity: 0;
+  animation: onb-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.onb-star-hero {
+  animation: onb-star-pulse 3s ease-in-out infinite;
+}
+
+.onb-star-dot {
+  opacity: 0;
+  animation: onb-star-dot 0.6s ease-out forwards;
+}
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint {
@@ -356,6 +386,10 @@ body {
   }
   .filo-toast-enter, .filo-fade-in {
     animation: none !important;
+  }
+  .onb-fade-in, .onb-star-hero, .onb-star-dot {
+    animation: none !important;
+    opacity: 1 !important;
   }
   .grain::after {
     display: none;
