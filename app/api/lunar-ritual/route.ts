@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateLunarRitualMessage } from "@/lib/ai";
 import { getCurrentLunarEvent } from "@/lib/astro-constants";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export async function GET() {
   const session = await auth();
@@ -109,6 +110,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dati mancanti" }, { status: 400 });
   }
 
+  // Check credits: 3 for free users, free for premium
+  const creditCheck = await checkCredits(session.user.id, "lunar_ritual");
+  if (!creditCheck.allowed) {
+    return NextResponse.json(
+      { error: `Crediti insufficienti. Servono ${creditCheck.cost} crediti (hai ${creditCheck.credits}).` },
+      { status: 402 }
+    );
+  }
+
   // Verify the ritual belongs to this user before updating
   const existingRitual = await db.lunarRitual.findUnique({
     where: { id: ritualId },
@@ -126,6 +136,9 @@ export async function POST(req: NextRequest) {
       completed: true,
     },
   });
+
+  // Deduct credits (no-op for premium users)
+  await deductCredits(session.user.id, "lunar_ritual");
 
   // Also save to journal with tag
   const tag = ritual.lunarPhase === "new_moon" ? "#lunanuova" : "#lunapiena";

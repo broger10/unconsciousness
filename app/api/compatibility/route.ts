@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateBirthChartReading, generateCompatibility } from "@/lib/ai";
-import { isPremium, getUserSubscription } from "@/lib/stripe";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -16,9 +16,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Data di nascita richiesta" }, { status: 400 });
   }
 
-  // Check premium status — free users pay 10 credits (not implemented yet, allow for now)
-  const subscription = await getUserSubscription(session.user.id);
-  const userIsPremium = isPremium(subscription);
+  // Check credits: 10 for free users, free for premium
+  const creditCheck = await checkCredits(session.user.id, "compatibility");
+  if (!creditCheck.allowed) {
+    return NextResponse.json(
+      { error: `Crediti insufficienti. Servono ${creditCheck.cost} crediti (hai ${creditCheck.credits}).` },
+      { status: 402 }
+    );
+  }
 
   // Get user's profile (person 1)
   const profile = await db.profile.findUnique({
@@ -90,6 +95,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Deduct credits (no-op for premium users)
+  const remainingCredits = await deductCredits(session.user.id, "compatibility");
+
   return NextResponse.json({
     id: compatibility.id,
     analysis: result.analysis,
@@ -101,7 +109,8 @@ export async function POST(req: NextRequest) {
       moonSign: person2Chart.moonSign,
       risingSign: person2Chart.risingSign,
     },
-    isPremium: userIsPremium,
+    isPremium: creditCheck.isPremium,
+    credits: remainingCredits,
   });
 }
 

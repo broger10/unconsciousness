@@ -97,7 +97,14 @@ export function calculateAspect(
   return null;
 }
 
+// Convert sign name to its starting degree (0-based)
+function signStartDegree(sign: string): number {
+  const idx = ZODIAC_SIGNS.indexOf(sign as ZodiacSign);
+  return idx >= 0 ? idx * 30 : 0;
+}
+
 // Find significant transits for a natal chart
+// Uses real transit degrees vs natal sign midpoints (best precision available)
 export function findSignificantTransits(
   natalPlanets: Array<{ name: string; sign: string }>
 ): Array<{
@@ -126,8 +133,10 @@ export function findSignificantTransits(
       // Skip same planet (Sun transit to natal Sun is always conjunct in birthday month)
       if (transit.planet === natal.name) continue;
 
-      const transitDeg = SIGN_DEGREES[transit.sign] || 0;
-      const natalDeg = SIGN_DEGREES[natal.sign] || 0;
+      // Use actual transit degree; natal planets only have sign-level precision
+      // so use sign midpoint (15° into the sign) for natal
+      const transitDeg = transit.degree;
+      const natalDeg = signStartDegree(natal.sign) + 15;
       const aspect = calculateAspect(transitDeg, natalDeg);
 
       if (aspect) {
@@ -149,9 +158,10 @@ export function findSignificantTransits(
   return results.slice(0, 3).map(({ weight: _w, ...rest }) => rest);
 }
 
-// Lunar phases for 2026 (approximate dates)
+// Lunar phases 2026-2027 (approximate dates)
 // Source: astronomical calculations, ±1 day accuracy
-export const LUNAR_PHASES_2026 = [
+export const LUNAR_PHASES = [
+  // 2026
   { date: "2026-01-12", phase: "new_moon" as const, sign: "Capricorno" },
   { date: "2026-01-27", phase: "full_moon" as const, sign: "Leone" },
   { date: "2026-02-10", phase: "new_moon" as const, sign: "Acquario" },
@@ -176,6 +186,32 @@ export const LUNAR_PHASES_2026 = [
   { date: "2026-11-18", phase: "full_moon" as const, sign: "Gemelli" },
   { date: "2026-12-03", phase: "new_moon" as const, sign: "Sagittario" },
   { date: "2026-12-18", phase: "full_moon" as const, sign: "Cancro" },
+  // 2027
+  { date: "2027-01-01", phase: "new_moon" as const, sign: "Capricorno" },
+  { date: "2027-01-16", phase: "full_moon" as const, sign: "Cancro" },
+  { date: "2027-01-31", phase: "new_moon" as const, sign: "Acquario" },
+  { date: "2027-02-14", phase: "full_moon" as const, sign: "Leone" },
+  { date: "2027-03-01", phase: "new_moon" as const, sign: "Pesci" },
+  { date: "2027-03-16", phase: "full_moon" as const, sign: "Vergine" },
+  { date: "2027-03-31", phase: "new_moon" as const, sign: "Ariete" },
+  { date: "2027-04-15", phase: "full_moon" as const, sign: "Bilancia" },
+  { date: "2027-04-29", phase: "new_moon" as const, sign: "Toro" },
+  { date: "2027-05-14", phase: "full_moon" as const, sign: "Scorpione" },
+  { date: "2027-05-29", phase: "new_moon" as const, sign: "Gemelli" },
+  { date: "2027-06-13", phase: "full_moon" as const, sign: "Sagittario" },
+  { date: "2027-06-28", phase: "new_moon" as const, sign: "Cancro" },
+  { date: "2027-07-12", phase: "full_moon" as const, sign: "Capricorno" },
+  { date: "2027-07-27", phase: "new_moon" as const, sign: "Leone" },
+  { date: "2027-08-10", phase: "full_moon" as const, sign: "Acquario" },
+  { date: "2027-08-26", phase: "new_moon" as const, sign: "Vergine" },
+  { date: "2027-09-09", phase: "full_moon" as const, sign: "Pesci" },
+  { date: "2027-09-25", phase: "new_moon" as const, sign: "Bilancia" },
+  { date: "2027-10-08", phase: "full_moon" as const, sign: "Ariete" },
+  { date: "2027-10-24", phase: "new_moon" as const, sign: "Scorpione" },
+  { date: "2027-11-07", phase: "full_moon" as const, sign: "Toro" },
+  { date: "2027-11-23", phase: "new_moon" as const, sign: "Sagittario" },
+  { date: "2027-12-07", phase: "full_moon" as const, sign: "Gemelli" },
+  { date: "2027-12-22", phase: "new_moon" as const, sign: "Capricorno" },
 ] as const;
 
 // Get current lunar event if we're within ±1 day of a new/full moon
@@ -187,7 +223,7 @@ export function getCurrentLunarEvent(): {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  for (const event of LUNAR_PHASES_2026) {
+  for (const event of LUNAR_PHASES) {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
 

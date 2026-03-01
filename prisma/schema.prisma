@@ -103,6 +103,9 @@ model Profile {
   northNodeSign      String?
   natalChartData     Json?      // Full chart details
 
+  // Credits (free users start with 30, premium users have unlimited)
+  credits            Int      @default(30)
+
   // Psychological profile
   awarenessScore     Int      @default(0)
   values             String[] @default([])

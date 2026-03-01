@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isPremium, getUserSubscription, stripe } from "@/lib/stripe";
+import { checkCredits, deductCredits } from "@/lib/credits";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 const DARK_BG = rgb(13 / 255, 23 / 255, 16 / 255); // #0D1710
@@ -10,34 +11,47 @@ const TEXT_PRIMARY = rgb(237 / 255, 232 / 255, 220 / 255); // #EDE8DC
 const TEXT_SECONDARY = rgb(184 / 255, 175 / 255, 155 / 255); // #B8AF9B
 const VERDIGRIS = rgb(78 / 255, 158 / 255, 138 / 255); // #4E9E8A
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  // Check access: user must be premium OR have completed a one-shot payment
+  // Check access: premium OR Stripe one-shot payment OR credits
   const subscription = await getUserSubscription(session.user.id);
   const userIsPremium = isPremium(subscription);
+  const useCredits = req.nextUrl.searchParams.get("method") === "credits";
 
   if (!userIsPremium) {
-    // Check if user has a completed Stripe checkout for pdf_report
-    let hasPaid = false;
-    if (subscription?.stripeCustomerId) {
-      const sessions = await stripe.checkout.sessions.list({
-        customer: subscription.stripeCustomerId,
-        status: "complete",
-        limit: 10,
-      });
-      hasPaid = sessions.data.some(
-        (s) => s.metadata?.product === "pdf_report" && s.payment_status === "paid"
-      );
-    }
-    if (!hasPaid) {
-      return NextResponse.json(
-        { error: "Acquista il report PDF o attiva un abbonamento premium" },
-        { status: 403 }
-      );
+    if (useCredits) {
+      // Pay with 20 credits
+      const creditCheck = await checkCredits(session.user.id, "pdf_report");
+      if (!creditCheck.allowed) {
+        return NextResponse.json(
+          { error: `Crediti insufficienti. Servono ${creditCheck.cost} crediti (hai ${creditCheck.credits}).` },
+          { status: 402 }
+        );
+      }
+      await deductCredits(session.user.id, "pdf_report");
+    } else {
+      // Check if user has a completed Stripe checkout for pdf_report
+      let hasPaid = false;
+      if (subscription?.stripeCustomerId) {
+        const sessions = await stripe.checkout.sessions.list({
+          customer: subscription.stripeCustomerId,
+          status: "complete",
+          limit: 10,
+        });
+        hasPaid = sessions.data.some(
+          (s) => s.metadata?.product === "pdf_report" && s.payment_status === "paid"
+        );
+      }
+      if (!hasPaid) {
+        return NextResponse.json(
+          { error: "Acquista il report PDF o attiva un abbonamento premium" },
+          { status: 403 }
+        );
+      }
     }
   }
 

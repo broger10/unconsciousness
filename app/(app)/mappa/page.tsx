@@ -424,12 +424,12 @@ export default function MappaPage() {
               <div className="text-[10px] text-text-muted font-ui">PDF premium con tutti i tuoi pianeti e la tua mitologia</div>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <a
-              href="/api/pdf-report"
+              href="/api/pdf-report?method=credits"
               className="flex-1 py-2.5 rounded-xl text-sm font-ui text-center bg-amber text-bg-base dimensional hover:glow transition-all"
             >
-              Scarica il tuo tema ✦
+              20 crediti ✦
             </a>
             <button
               onClick={async () => {
@@ -445,7 +445,7 @@ export default function MappaPage() {
               }}
               className="flex-1 py-2.5 rounded-xl text-sm font-ui text-center glass border border-amber/15 text-amber hover:glow transition-all"
             >
-              Acquista €4,99
+              €4,99
             </button>
           </div>
         </motion.div>

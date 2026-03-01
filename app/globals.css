@@ -1,7 +1,7 @@
-@import "tailwindcss";
-
-/* Fonts loaded at runtime — no build-time dependency on Google */
+/* Fonts loaded at runtime — must precede tailwindcss per CSS spec */
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Syne:wght@400;500;600;700;800&family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&display=swap");
+
+@import "tailwindcss";
 
 :root {
   --font-fraunces: "Fraunces", Georgia, serif;
