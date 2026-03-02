@@ -25,7 +25,9 @@ model User {
   compatibilities Compatibility[]
   lunarRituals    LunarRitual[]
   pushSubscriptions PushSubscription[]
-  mapInsights     MapInsight[]
+  mapInsights       MapInsight[]
+  specchioCapitoli  SpecchioCapitolo[]
+  specchioConsigli  SpecchioConsiglio[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -259,4 +261,44 @@ model MapInsight {
 
   @@unique([userId, date, type])
   @@index([userId, date])
+}
+
+model SpecchioCapitolo {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug           String    // "radici" | "paure" | "confini" | "desiderio" | "relazioni" | "ombra" | "potere"
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  giornoCorrente Int       @default(1)
+  ritratto       String?   @db.Text
+  ritrattoInsights String[] @default([])
+  sessioni       SpecchioSessione[]
+
+  @@index([userId])
+  @@unique([userId, slug])
+}
+
+model SpecchioSessione {
+  id         String   @id @default(cuid())
+  capitoloId String
+  capitolo   SpecchioCapitolo @relation(fields: [capitoloId], references: [id], onDelete: Cascade)
+  giorno     Int
+  domande    Json     // [{domanda, risposte: [str,str,str], risposta_scelta, testo_libero}]
+  createdAt  DateTime @default(now())
+
+  @@index([capitoloId])
+}
+
+model SpecchioConsiglio {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slugCapitolo1  String
+  slugCapitolo2  String
+  motivazione1   String
+  motivazione2   String
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
 }

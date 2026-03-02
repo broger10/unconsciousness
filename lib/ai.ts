@@ -940,3 +940,148 @@ Genera la costellazione.`,
     return { name: "Costellazione Senza Nome", insight: text };
   }
 }
+
+// ============================================
+// SPECCHIO — Lo Specchio (Guided Self-Knowledge)
+// ============================================
+
+export async function generateSpecchioDomande(context: {
+  capitoloSlug: string;
+  capitoloTitolo: string;
+  tematica: string;
+  giorno: number;
+  giorniTotali: number;
+  rispostePrecedenti: Array<{ giorno: number; domande: unknown }>;
+  profile: { sunSign?: string; moonSign?: string; risingSign?: string; shadows?: string[]; strengths?: string[] };
+}): Promise<Array<{ domanda: string; risposte: string[] }>> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 800,
+    system: `${TONE}Sei uno psicologo junghiano che guida un percorso di auto-conoscenza.
+Stai conducendo il capitolo "${context.capitoloTitolo}" (tema: ${context.tematica}).
+Giorno ${context.giorno} di ${context.giorniTotali}.
+
+Genera ESATTAMENTE 3 domande. Ogni domanda deve avere 3 opzioni di risposta.
+Le domande devono essere progressivamente più profonde man mano che i giorni avanzano.
+Le opzioni di risposta devono essere oneste, nessuna chiaramente "giusta" — tutte plausibili e rivelatrici.
+Ogni opzione: max 15 parole, linguaggio diretto.
+Ogni domanda: max 20 parole, seconda persona singolare.
+
+${context.rispostePrecedenti.length > 0 ? `Risposte precedenti di questa persona:\n${JSON.stringify(context.rispostePrecedenti)}\nUsa queste informazioni per rendere le domande di oggi più mirate.` : ""}
+
+Rispondi SOLO con JSON valido:
+[
+  {"domanda": "...", "risposte": ["opzione1", "opzione2", "opzione3"]},
+  {"domanda": "...", "risposte": ["opzione1", "opzione2", "opzione3"]},
+  {"domanda": "...", "risposte": ["opzione1", "opzione2", "opzione3"]}
+]`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
+Ombre: ${context.profile.shadows?.join(", ") || "N/A"}
+Forze: ${context.profile.strengths?.join(", ") || "N/A"}
+
+Genera le 3 domande per il giorno ${context.giorno} del capitolo "${context.capitoloTitolo}".`,
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error("Failed to parse domande JSON");
+  return JSON.parse(jsonMatch[0]);
+}
+
+export async function generateSpecchioFeedback(context: {
+  risposteOggi: Array<{ domanda: string; risposta: string }>;
+}): Promise<string> {
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 60,
+    system: `${TONE}Scrivi UNA frase di feedback dopo una sessione di auto-conoscenza. Max 15 parole. Diretta, senza consolazione. Basata sulle risposte date.`,
+    messages: [
+      {
+        role: "user",
+        content: `Risposte di oggi:\n${context.risposteOggi.map((r) => `D: ${r.domanda}\nR: ${r.risposta}`).join("\n\n")}`,
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text.trim();
+}
+
+export async function generateSpecchioRitratto(context: {
+  capitoloTitolo: string;
+  capitoloSlug: string;
+  sessioni: Array<{ giorno: number; domande: unknown }>;
+  profile: { sunSign?: string; moonSign?: string; risingSign?: string };
+  capitoliCompletati: Array<{ slug: string; ritratto?: string | null }>;
+}): Promise<{ ritratto: string; insights: string[] }> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1500,
+    system: `${TONE}Sei uno psicologo junghiano. Hai appena completato un'analisi di ${context.sessioni.length} sessioni sul tema "${context.capitoloTitolo}" con questa persona.
+
+Tutte le risposte che ha dato:
+${JSON.stringify(context.sessioni)}
+
+Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
+${context.capitoliCompletati.length > 0 ? `Capitoli precedenti completati: ${context.capitoliCompletati.map((c) => c.slug).join(", ")}` : ""}
+
+Scrivi il ritratto psicologico di questa persona in relazione al tema di questo capitolo. Non descrivere le domande o le risposte. Scrivi come se conoscessi questa persona da anni.
+
+Struttura:
+Paragrafo 1 (3-4 frasi): il pattern centrale emerso
+Paragrafo 2 (3-4 frasi): l'origine probabile di questo pattern
+Paragrafo 3 (2-3 frasi): cosa questo costa a questa persona
+Paragrafo 4 (2 frasi): cosa cambierebbe se lo vedesse davvero
+
+Poi genera 3 insight brevi (una frase ciascuno).
+Rispondi in JSON: {"ritratto": "testo completo...", "insights": ["frase 1", "frase 2", "frase 3"]}`,
+    messages: [
+      {
+        role: "user",
+        content: `Genera il ritratto per il capitolo "${context.capitoloTitolo}".`,
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return { ritratto: text, insights: [] };
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch {
+    return { ritratto: text, insights: [] };
+  }
+}
+
+export async function generateSpecchioConsiglio(context: {
+  capitoliCompletati: Array<{ slug: string; ritratto?: string | null }>;
+  capitoliDisponibili: string[];
+  ultimoRitratto?: string;
+  profile: { sunSign?: string; moonSign?: string; risingSign?: string };
+}): Promise<Array<{ slug: string; motivazione: string }>> {
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    system: `${TONE}Sei una guida psicologica. Questa persona sta facendo un percorso di auto-conoscenza.
+Capitoli completati: ${context.capitoliCompletati.map((c) => c.slug).join(", ") || "nessuno"}
+Capitoli disponibili: ${context.capitoliDisponibili.join(", ")}
+${context.ultimoRitratto ? `Ultimo ritratto:\n${context.ultimoRitratto}` : ""}
+Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
+
+Scegli i 2 capitoli più utili da proporre come prossimo step.
+Rispondi SOLO in JSON:
+{"consigli": [{"slug": "...", "motivazione": "max 12 parole, diretta"}, {"slug": "...", "motivazione": "max 12 parole, diretta"}]}`,
+    messages: [
+      {
+        role: "user",
+        content: "Consiglia i prossimi 2 capitoli.",
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Failed to parse consiglio JSON");
+  const parsed = JSON.parse(jsonMatch[0]);
+  return parsed.consigli;
+}

@@ -1,408 +1,252 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
-import {
-  Circle, CircleDashed, CircleDot, Diamond, Sparkles, Sparkle,
-  Moon, ArrowRight, type LucideIcon,
-} from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { SchermataInizio } from "@/components/specchio/schermata-inizio";
+import { SchermataSceltaCapitolo } from "@/components/specchio/schermata-scelta-capitolo";
+import { SessioneGiornaliera } from "@/components/specchio/sessione-giornaliera";
+import { SchermataFineSessione } from "@/components/specchio/schermata-fine-sessione";
+import { SchermataRitratto } from "@/components/specchio/schermata-ritratto";
+import { SchermataRiposa } from "@/components/specchio/schermata-riposa";
+import { Compass } from "lucide-react";
+import { motion } from "framer-motion";
 
-const premium = [0.16, 1, 0.3, 1] as const;
+type Schermata =
+  | "loading"
+  | "inizio"
+  | "scelta"
+  | "sessione"
+  | "fine-sessione"
+  | "ritratto"
+  | "riposa";
 
-interface JournalEntry {
+interface CapitoloAttivo {
   id: string;
-  content: string;
-  aiReflection: string | null;
-  createdAt: string;
+  slug: string;
+  giornoCorrente: number;
+  ritratto?: string | null;
+  ritrattoInsights?: string[];
 }
 
-interface CheckinEntry {
-  id: string;
-  mood: number;
-  energy: number;
-  aiInsight: string | null;
-  createdAt: string;
+interface CapitoloCompletato {
+  slug: string;
+  ritratto?: string | null;
+  ritrattoInsights?: string[];
 }
 
-type Filter = "tutto" | "diario" | "mood";
-
-const moodLabels: Record<number, string> = {
-  1: "Pesante",
-  2: "Bassa",
-  3: "Neutra",
-  4: "Buona",
-  5: "Radiante",
-};
-
-const moodIcons: Record<number, LucideIcon> = {
-  1: Circle,
-  2: CircleDashed,
-  3: CircleDot,
-  4: Diamond,
-  5: Sparkles,
-};
-
-const dailyPhrases = [
-  "Cosa attraversa la tua mente oggi?",
-  "Quale ombra hai incontrato questa settimana?",
-  "Scrivi ciò che non riesci a dire ad alta voce",
-  "Qual è la verità che stai evitando?",
-  "Cosa hai scoperto di te oggi?",
-  "Descrivi un momento che ti ha sorpreso",
-  "Quale pattern si sta ripetendo?",
-  "Cosa ti sta chiedendo il silenzio?",
-  "Dove senti resistenza nella tua vita?",
-  "Quale parte di te chiede attenzione?",
-  "Scrivi una lettera al te stesso di un anno fa",
-  "Cosa significherebbe lasciar andare?",
-  "Quale domanda continua a tornare?",
-  "Cosa ti ha insegnato la Luna questa settimana?",
-  "Descrivi una paura che porti con te",
-  "Quale dono non stai usando?",
-  "Cosa cambieresti se nessuno giudicasse?",
-  "Scrivi il sogno più vivido che ricordi",
-  "Quale relazione ti sta trasformando?",
-  "Dove cerchi approvazione?",
-  "Cosa significa casa per te oggi?",
-  "Quale confine hai bisogno di tracciare?",
-  "Scrivi senza pensare per due minuti",
-  "Cosa ti rende vivo/a in questo momento?",
-  "Quale eredità stai portando avanti?",
-  "Descrivi il tuo rapporto con il tempo",
-  "Cosa stai costruendo nel silenzio?",
-  "Quale versione di te sta emergendo?",
-  "Scrivi la cosa più vera che sai",
-  "Cosa ti direbbe il cielo se potesse parlare?",
-];
-
-function getDailyPhrase(): string {
-  const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  return dailyPhrases[dayOfYear % dailyPhrases.length];
+interface Consiglio {
+  slug: string;
+  motivazione: string;
 }
 
 export default function DiarioPage() {
-  const searchParams = useSearchParams();
-  const [journals, setJournals] = useState<JournalEntry[]>([]);
-  const [checkins, setCheckins] = useState<CheckinEntry[]>([]);
-  const [newEntry, setNewEntry] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>("tutto");
-  const [expandedReflection, setExpandedReflection] = useState<string | null>(null);
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
-  const [streak, setStreak] = useState(0);
+  const [schermata, setSchermata] = useState<Schermata>("loading");
+  const [capitoloAttivo, setCapitoloAttivo] = useState<CapitoloAttivo | null>(null);
+  const [capitoliCompletati, setCapitoliCompletati] = useState<CapitoloCompletato[]>([]);
+  const [consigli, setConsigli] = useState<Consiglio[]>([]);
+  const [consigliLoading, setConsigliLoading] = useState(false);
+  const [sessioneFeedback, setSessioneFeedback] = useState("");
+  const [sessioneIsUltimo, setSessioneIsUltimo] = useState(false);
+  // For viewing a portrait of a just-completed chapter
+  const [ritrattoCapitoloId, setRitrattoCapitoloId] = useState<string | null>(null);
+  const [ritrattoSlug, setRitrattoSlug] = useState<string | null>(null);
 
-  // Pre-fill textarea from ?prompt= param (e.g. from Il Filo)
-  useEffect(() => {
-    const prompt = searchParams.get("prompt");
-    if (prompt) setNewEntry(prompt);
-  }, [searchParams]);
-
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/journal").then((r) => r.json()).catch(() => ({ journals: [] })),
-      fetch("/api/checkin").then((r) => r.json()).catch(() => ({ checkins: [], streak: 0 })),
-    ])
-      .then(([journalData, checkinData]) => {
-        if (journalData.journals) setJournals(journalData.journals);
-        if (checkinData.checkins) setCheckins(checkinData.checkins);
-        if (checkinData.streak) setStreak(checkinData.streak);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const [error, setError] = useState("");
-
-  const saveEntry = async () => {
-    if (!newEntry.trim() || saving) return;
-    setSaving(true);
-    setError("");
-
+  // Load state on mount
+  const loadStato = useCallback(async () => {
     try {
-      const res = await fetch("/api/journal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newEntry }),
-      });
+      const res = await fetch("/api/specchio/stato");
       const data = await res.json();
-      if (!res.ok) {
-        setError(res.status === 402
-          ? "Crediti esauriti. Passa a Premium dal tuo profilo."
-          : data.error || "Errore nel salvataggio.");
+
+      setCapitoliCompletati(data.capitoliCompletati || []);
+
+      if (data.maiIniziato) {
+        setSchermata("inizio");
         return;
       }
-      if (data.journal) {
-        setJournals((prev) => [data.journal, ...prev]);
-        setNewEntry("");
-        setExpandedReflection(data.journal.id);
+
+      if (data.capitoloAttivo) {
+        setCapitoloAttivo(data.capitoloAttivo);
+        if (data.sessioneOggiCompletata) {
+          setSchermata("riposa");
+        } else {
+          setSchermata("sessione");
+        }
+        return;
+      }
+
+      if (data.capitoloAppenaCompletato) {
+        // Chapter just completed — show portrait
+        const ultimo = data.capitoliCompletati[0];
+        if (ultimo?.ritratto) {
+          setRitrattoSlug(ultimo.slug);
+          setSchermata("ritratto");
+        } else {
+          // Need to generate portrait — find the chapter
+          fetchConsigliAndShow();
+        }
+        return;
+      }
+
+      // No active chapter, not just completed — show choice
+      fetchConsigliAndShow();
+    } catch {
+      setSchermata("inizio");
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStato();
+  }, [loadStato]);
+
+  const fetchConsigliAndShow = async () => {
+    setConsigliLoading(true);
+    setSchermata("scelta");
+    try {
+      const res = await fetch("/api/specchio/consiglia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      setConsigli(data.consigli || []);
+    } catch {
+      setConsigli([]);
+    }
+    setConsigliLoading(false);
+  };
+
+  const handleStartFromInizio = () => {
+    fetchConsigliAndShow();
+  };
+
+  const handleSelectCapitolo = async (slug: string) => {
+    setConsigliLoading(true);
+    try {
+      const res = await fetch("/api/specchio/consiglia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json();
+      if (data.capitoloId) {
+        setCapitoloAttivo({
+          id: data.capitoloId,
+          slug: data.slug,
+          giornoCorrente: 1,
+        });
+        setSchermata("sessione");
       }
     } catch {
-      setError("Errore di connessione. Riprova.");
-    } finally {
-      setSaving(false);
+      // Stay on choice screen
+    }
+    setConsigliLoading(false);
+  };
+
+  const handleSessioneComplete = (feedback: string, isUltimo: boolean) => {
+    setSessioneFeedback(feedback);
+    setSessioneIsUltimo(isUltimo);
+    setSchermata("fine-sessione");
+  };
+
+  const handleFineSessioneContinua = () => {
+    if (sessioneIsUltimo && capitoloAttivo) {
+      setRitrattoCapitoloId(capitoloAttivo.id);
+      setRitrattoSlug(capitoloAttivo.slug);
+      setCapitoloAttivo(null);
+      setSchermata("ritratto");
+    } else {
+      // Go to rest screen until tomorrow
+      setSchermata("riposa");
     }
   };
 
-  // Merge and sort timeline
-  const timeline: Array<{ type: "journal" | "checkin"; date: string; data: JournalEntry | CheckinEntry }> = [];
+  const handleRitrattoContinua = () => {
+    setRitrattoCapitoloId(null);
+    setRitrattoSlug(null);
+    fetchConsigliAndShow();
+  };
 
-  if (filter !== "mood") {
-    journals.forEach((j) => timeline.push({ type: "journal", date: j.createdAt, data: j }));
-  }
-  if (filter !== "diario") {
-    checkins.forEach((c) => timeline.push({ type: "checkin", date: c.createdAt, data: c }));
-  }
+  const handleVediUltimoRitratto = () => {
+    const ultimo = capitoliCompletati[0];
+    if (ultimo) {
+      setRitrattoSlug(ultimo.slug);
+      setSchermata("ritratto");
+    }
+  };
 
-  timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  // Group by date
-  const grouped: Record<string, typeof timeline> = {};
-  timeline.forEach((item) => {
-    const dateKey = new Date(item.date).toLocaleDateString("it-IT", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-    if (!grouped[dateKey]) grouped[dateKey] = [];
-    grouped[dateKey].push(item);
-  });
-
-  if (loading) {
+  // Loading
+  if (schermata === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <Moon size={36} className="text-amber ember-pulse mb-4 mx-auto" />
-          <p className="text-text-muted text-sm font-ui">Apro il diario...</p>
+          <Compass size={36} className="text-amber ember-pulse mb-4" />
+          <p className="text-text-muted text-sm font-ui">Carico lo specchio...</p>
         </motion.div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ease: premium }}
-          className="mb-5"
-        >
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl font-bold font-display">Diario Cosmico</h1>
-            {streak > 0 && (
-              <span className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-                <Diamond size={12} className="text-amber ember-pulse" />
-                <span className="text-amber text-xs font-bold font-ui">{streak} {streak === 1 ? "giorno" : "giorni"}</span>
-              </span>
-            )}
-          </div>
-          <p className="text-text-muted text-xs font-ui">Scrivi, rifletti, scopri i tuoi pattern nascosti.</p>
-        </motion.div>
+  // First time
+  if (schermata === "inizio") {
+    return <SchermataInizio onStart={handleStartFromInizio} />;
+  }
 
-        {/* New entry card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, ease: premium }}
-          className="glass rounded-2xl p-5 mb-5 dimensional border border-amber/5"
-        >
-          <div className="text-[10px] text-amber font-ui tracking-[0.2em] mb-3"><Moon size={10} className="inline" /> SCRIVI</div>
-          <textarea
-            value={newEntry}
-            onChange={(e) => setNewEntry(e.target.value)}
-            placeholder={getDailyPhrase()}
-            rows={4}
-            className="w-full bg-transparent text-text-primary font-body text-lg italic placeholder:text-text-muted/60 resize-none focus:outline-none leading-relaxed mb-3"
-          />
-          <div className="flex items-center justify-between">
-            <span className={`text-[10px] font-ui ${newEntry.length > 10000 ? "text-sienna" : "text-text-muted"}`}>
-              {newEntry.length > 0 ? `${newEntry.length}/10000` : ""}
-            </span>
-            <button
-              onClick={saveEntry}
-              disabled={!newEntry.trim() || saving}
-              className={`px-5 py-2 rounded-xl text-sm font-ui transition-all duration-300 ${
-                newEntry.trim() && !saving
-                  ? "bg-amber text-bg-base dimensional hover:glow"
-                  : "bg-bg-surface text-text-muted border border-border/50"
-              }`}
-            >
-              {saving ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-1 h-1 bg-bg-base rounded-full animate-bounce" />
-                  Rivelo...
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5"><Diamond size={10} className="inline" /> Rivela</span>
-              )}
-            </button>
-          </div>
-          {error && (
-            <div className="mt-3 text-xs text-sienna font-ui bg-sienna/10 rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
-        </motion.div>
+  // Choice between chapters
+  if (schermata === "scelta") {
+    return (
+      <SchermataSceltaCapitolo
+        consigli={consigli}
+        loading={consigliLoading}
+        onSelect={handleSelectCapitolo}
+      />
+    );
+  }
 
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex gap-2 mb-5"
-        >
-          {(["tutto", "diario", "mood"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-ui tracking-wide transition-all duration-300 ${
-                filter === f
-                  ? "glass text-amber border border-amber/15"
-                  : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              {f === "tutto" ? "Tutto" : f === "diario" ? "Diario" : "Mood"}
-            </button>
-          ))}
-        </motion.div>
+  // Daily session
+  if (schermata === "sessione" && capitoloAttivo) {
+    return (
+      <SessioneGiornaliera
+        capitoloId={capitoloAttivo.id}
+        capitoloSlug={capitoloAttivo.slug}
+        giorno={capitoloAttivo.giornoCorrente}
+        onComplete={handleSessioneComplete}
+      />
+    );
+  }
 
-        {/* Timeline */}
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([dateKey, items]) => (
-            <div key={dateKey}>
-              <div className="text-[10px] text-text-muted font-ui tracking-[0.15em] mb-3 capitalize">{dateKey}</div>
-              <div className="space-y-3">
-                <AnimatePresence>
-                  {items.map((item) => {
-                    if (item.type === "journal") {
-                      const j = item.data as JournalEntry;
-                      const isExpanded = expandedReflection === j.id;
-                      return (
-                        <motion.div
-                          key={j.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ ease: premium }}
-                          className="glass rounded-xl p-4"
-                        >
-                          <div className="flex items-start gap-2 mb-2">
-                            <Moon size={12} className="text-amber shrink-0 mt-0.5" />
-                            {j.content.length > 80 && !expandedEntries.has(j.id) ? (
-                              <p
-                                className="text-sm text-text-primary font-body leading-relaxed cursor-pointer"
-                                onClick={() => setExpandedEntries((prev) => new Set(prev).add(j.id))}
-                              >
-                                {j.content.slice(0, 80)}...
-                              </p>
-                            ) : (
-                              <p className="text-sm text-text-primary font-body leading-relaxed">{j.content}</p>
-                            )}
-                          </div>
-                          {j.aiReflection && (
-                            <>
-                              <button
-                                onClick={() => setExpandedReflection(isExpanded ? null : j.id)}
-                                className="text-[10px] text-verdigris font-ui tracking-wide mt-2 mb-1 flex items-center gap-1"
-                              >
-                                <Diamond size={8} className="inline" /> {isExpanded ? "Chiudi riflessione" : "Riflessione cosmica"}
-                              </button>
-                              <AnimatePresence>
-                                {isExpanded && (
-                                  <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ ease: premium }}
-                                    className="overflow-hidden"
-                                  >
-                                    <div className="pt-2 pl-5 border-l border-verdigris/20 ml-1">
-                                      <MarkdownText
-                                        content={j.aiReflection}
-                                        className="text-sm text-text-secondary font-body italic leading-relaxed"
-                                      />
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </>
-                          )}
-                          <div className="text-[10px] text-text-muted font-ui mt-2">
-                            {new Date(j.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
-                          </div>
-                        </motion.div>
-                      );
-                    } else {
-                      const c = item.data as CheckinEntry;
-                      const MoodIcon = moodIcons[c.mood] || CircleDot;
-                      return (
-                        <motion.div
-                          key={c.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ ease: premium }}
-                          className="glass rounded-xl p-4 flex items-center gap-3"
-                        >
-                          <span className={`${c.mood >= 4 ? "text-amber" : c.mood >= 3 ? "text-text-muted" : "text-sienna"}`}>
-                            <MoodIcon size={20} />
-                          </span>
-                          <div className="flex-1">
-                            <div className="text-sm font-display font-bold">{moodLabels[c.mood] || "Check-in"}</div>
-                            <div className="text-[10px] text-text-muted font-ui">
-                              Energia: {c.energy}/5 &middot;{" "}
-                              {new Date(c.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
-                            </div>
-                          </div>
-                          {c.aiInsight && (
-                            <Diamond size={10} className="text-verdigris" />
-                          )}
-                        </motion.div>
-                      );
-                    }
-                  })}
-                </AnimatePresence>
-              </div>
-            </div>
-          ))}
-        </div>
+  // Session complete feedback
+  if (schermata === "fine-sessione") {
+    return (
+      <SchermataFineSessione
+        feedback={sessioneFeedback}
+        isUltimoGiorno={sessioneIsUltimo}
+        onContinua={handleFineSessioneContinua}
+      />
+    );
+  }
 
-        {/* Il Filo entry point — visible with 3+ journal entries */}
-        {journals.length >= 3 && (
-          <Link
-            href="/diario/il-filo"
-            className="block glass rounded-xl p-5 border border-amber/10 transition-all duration-300 hover:border-amber/20 mb-6"
-          >
-            <div className="flex items-center gap-3">
-              <Sparkle size={20} className="text-amber filo-pulse" />
-              <div className="flex-1">
-                <div className="text-sm font-display font-bold">Il Filo</div>
-                <div className="text-xs text-text-muted font-body italic">
-                  Scopri i pattern nascosti nelle tue riflessioni
-                </div>
-              </div>
-              <ArrowRight size={12} className="text-text-muted" />
-            </div>
-          </Link>
-        )}
+  // Portrait
+  if (schermata === "ritratto" && ritrattoSlug) {
+    const completed = capitoliCompletati.find((c) => c.slug === ritrattoSlug);
+    return (
+      <SchermataRitratto
+        capitoloId={ritrattoCapitoloId || ""}
+        capitoloSlug={ritrattoSlug}
+        ritratto={completed?.ritratto}
+        insights={completed?.ritrattoInsights}
+        onContinua={handleRitrattoContinua}
+      />
+    );
+  }
 
-        {/* Empty state */}
-        {timeline.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <Moon size={36} className="text-text-muted mb-4 mx-auto" />
-            <p className="text-text-muted font-body italic">Il tuo diario cosmico è vuoto.<br />Inizia a scrivere per scoprire i tuoi pattern.</p>
-          </motion.div>
-        )}
-      </div>
-    </div>
-  );
+  // Rest (already completed today)
+  if (schermata === "riposa") {
+    return (
+      <SchermataRiposa
+        haRitratto={capitoliCompletati.length > 0 && !!capitoliCompletati[0]?.ritratto}
+        onVediRitratto={handleVediUltimoRitratto}
+      />
+    );
+  }
+
+  return null;
 }

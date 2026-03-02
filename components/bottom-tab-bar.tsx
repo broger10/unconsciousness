@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, Compass, Sparkles, BookOpen, User, type LucideIcon } from "lucide-react";
+import { Home, Compass, Sparkles, ScanEye, User, type LucideIcon } from "lucide-react";
 
 const tabs: { href: string; Icon: LucideIcon; label: string; center?: boolean }[] = [
   { href: "/oggi", Icon: Home, label: "Oggi" },
   { href: "/mappa", Icon: Compass, label: "Mappa" },
   { href: "/chiedi", Icon: Sparkles, label: "Oracolo", center: true },
-  { href: "/diario", Icon: BookOpen, label: "Diario" },
+  { href: "/diario", Icon: ScanEye, label: "Specchio" },
   { href: "/profilo", Icon: User, label: "Profilo" },
 ];
 
