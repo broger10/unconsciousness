@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,14 @@ const tabs: { href: string; Icon: LucideIcon; label: string; center?: boolean }[
 
 export function BottomTabBar() {
   const pathname = usePathname();
+  const [mapUnread, setMapUnread] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/mappa/daily?check=unread")
+      .then((r) => r.json())
+      .then((d) => { if (d.unread) setMapUnread(d.unread); })
+      .catch(() => {});
+  }, [pathname]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50" aria-label="Navigazione principale">
@@ -22,6 +31,7 @@ export function BottomTabBar() {
         {tabs.map((tab) => {
           const active = pathname === tab.href || (tab.href !== "/oggi" && pathname.startsWith(tab.href));
           const isCenter = tab.center;
+          const showBadge = tab.href === "/mappa" && mapUnread > 0 && !active;
 
           return (
             <Link
@@ -47,8 +57,11 @@ export function BottomTabBar() {
                   <tab.Icon size={20} />
                 </span>
               ) : (
-                <span className={cn("transition-all", active && "scale-110")}>
+                <span className={cn("transition-all relative", active && "scale-110")}>
                   <tab.Icon size={20} />
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber star-glow" style={{ color: "#C9A84C" }} />
+                  )}
                 </span>
               )}
               <span className={cn(

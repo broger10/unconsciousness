@@ -25,6 +25,7 @@ model User {
   compatibilities Compatibility[]
   lunarRituals    LunarRitual[]
   pushSubscriptions PushSubscription[]
+  mapInsights     MapInsight[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -242,4 +243,20 @@ model PushSubscription {
   createdAt    DateTime @default(now())
 
   @@index([userId])
+}
+
+model MapInsight {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  type      String   // "star" | "constellation"
+  content   String   @db.Text
+  category  String   // "transit" | "shadow" | "mirror" | "growth" | "lunar"
+  metadata  Json?    // {x, y, brightness, color, constellationName}
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, type])
+  @@index([userId, date])
 }

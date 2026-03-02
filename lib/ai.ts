@@ -853,3 +853,90 @@ Genera la frase tagliente.`,
   });
   return (message.content[0] as { type: "text"; text: string }).text.trim();
 }
+
+// ============================================
+// MAP — Il Cielo Interiore (Daily Star Insights)
+// ============================================
+
+export async function generateStarInsight(context: {
+  category: string;
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+    blindSpots?: string[];
+    strengths?: string[];
+    northNodeSign?: string;
+  };
+  transits: Array<{ description: string }>;
+  recentMoods: number[];
+  recentThemes: string[];
+  lunarEvent: { phase: string; sign: string } | null;
+}): Promise<string> {
+  const categoryPrompts: Record<string, string> = {
+    transit: `Genera un micro-insight basato sul transito astrale più significativo di oggi per questa persona. Spiega cosa significa per LEI specificamente, non in generale.`,
+    shadow: `Genera un micro-insight sull'ombra che si sta attivando in questo periodo. Il mood recente è basso — non consolare, ma illumina cosa sta succedendo sotto la superficie.`,
+    mirror: `Genera un micro-insight di riflessione personale. Qualcosa che questa persona dovrebbe notare di sé oggi, basato sul suo tema natale e i pattern recenti.`,
+    growth: `Genera un micro-insight sulla crescita in corso. Il mood recente è alto — evidenzia cosa sta funzionando e dove sta andando questa energia.`,
+    lunar: `Genera un micro-insight legato alla fase lunare corrente (${context.lunarEvent?.phase === "new_moon" ? "Luna Nuova" : "Luna Piena"} in ${context.lunarEvent?.sign}). Cosa significa per questa persona specifica.`,
+  };
+
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 150,
+    system: `${TONE}Sei la voce del cielo interiore. Scrivi UN micro-insight di 1-2 frasi.
+Deve essere radicalmente specifico per questa persona. Niente frasi generiche.
+Non iniziare con "Oggi" — varia gli incipit. Non usare domande retoriche come incipit.
+${categoryPrompts[context.category] || categoryPrompts.mirror}`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
+Nodo Nord: ${context.profile.northNodeSign || "N/A"}
+Ombre: ${context.profile.shadows?.slice(0, 2).join(", ") || "N/A"}
+Punti ciechi: ${context.profile.blindSpots?.slice(0, 2).join(", ") || "N/A"}
+Punti di forza: ${context.profile.strengths?.slice(0, 2).join(", ") || "N/A"}
+Transiti attivi: ${context.transits.map((t) => t.description).join("; ") || "Nessun transito significativo"}
+Mood ultimi giorni (1-5): ${context.recentMoods.join(", ") || "Nessun dato"}
+Temi recenti dal diario: ${context.recentThemes.join(", ") || "Nessun dato"}
+${context.lunarEvent ? `Fase lunare: ${context.lunarEvent.phase === "new_moon" ? "Luna Nuova" : "Luna Piena"} in ${context.lunarEvent.sign}` : ""}
+
+Genera il micro-insight.`,
+      },
+    ],
+  });
+  return (message.content[0] as { type: "text"; text: string }).text.trim();
+}
+
+export async function generateConstellationInsight(context: {
+  stars: Array<{ content: string; category: string }>;
+  profile: { sunSign?: string; moonSign?: string };
+}): Promise<{ name: string; insight: string }> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 300,
+    system: `${TONE}Sei la voce del cielo interiore. Ti vengono date le stelle (micro-insight) della settimana appena trascorsa.
+Devi creare una COSTELLAZIONE: un nome evocativo (2-3 parole, es: "La Pazienza Feroce", "Il Fuoco Quieto") e una sintesi di 2-3 frasi che colleghi i temi della settimana in un unico filo narrativo.
+Rispondi SOLO con JSON valido: {"name": "...", "insight": "..."}`,
+    messages: [
+      {
+        role: "user",
+        content: `Persona: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}
+
+Stelle della settimana:
+${context.stars.map((s, i) => `${i + 1}. [${s.category}] ${s.content}`).join("\n")}
+
+Genera la costellazione.`,
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return { name: "Costellazione Senza Nome", insight: text };
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch {
+    return { name: "Costellazione Senza Nome", insight: text };
+  }
+}
