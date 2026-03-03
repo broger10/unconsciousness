@@ -9,7 +9,7 @@ import { Home, Compass, Sparkles, ScanEye, User, type LucideIcon } from "lucide-
 const tabs: { href: string; Icon: LucideIcon; label: string; center?: boolean }[] = [
   { href: "/oggi", Icon: Home, label: "Il Cielo" },
   { href: "/mappa", Icon: Compass, label: "Mappa" },
-  { href: "/chiedi", Icon: Sparkles, label: "Oracolo", center: true },
+  { href: "/chiedi", Icon: Sparkles, label: "Il Filo", center: true },
   { href: "/diario", Icon: ScanEye, label: "Specchio" },
   { href: "/profilo", Icon: User, label: "Profilo" },
 ];

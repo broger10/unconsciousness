@@ -513,9 +513,23 @@ body {
   animation: constellation-draw 2s ease-out forwards;
 }
 
+/* Il Filo — Bordeaux background */
+.filo-bg {
+  background: hsl(345, 28%, 10%);
+}
+
+/* Il Filo — Emotion selected glow */
+@keyframes filo-selected-glow {
+  0%, 100% { text-shadow: 0 0 8px currentColor; opacity: 1; }
+  50% { text-shadow: 0 0 16px currentColor, 0 0 24px currentColor; opacity: 0.9; }
+}
+.filo-selected-glow {
+  animation: filo-selected-glow 2s ease-in-out infinite;
+}
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active, .star-bloom, .star-breathe, .star-tremble, .constellation-line {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active, .star-bloom, .star-breathe, .star-tremble, .constellation-line, .filo-selected-glow {
     animation: none !important;
   }
   .filo-toast-enter, .filo-fade-in {

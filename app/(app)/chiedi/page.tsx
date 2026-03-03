@@ -1,261 +1,407 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
-import { Moon, Diamond, Eye, Sparkle, Sparkles, Send, type LucideIcon } from "lucide-react";
+import { KalpavrikshaTree } from "@/components/filo/kalpavriksha-tree";
+
+type FiloState = "idle" | "selected" | "loading" | "revealed" | "limited";
+
+const PRESET_EMOTIONS = [
+  "rabbia",
+  "paura",
+  "vergogna",
+  "confusione",
+  "dolore",
+  "vuoto",
+  "ansia",
+  "solitudine",
+];
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
-interface Message {
-  id: string;
-  userMessage: string | null;
-  content: string;
-  createdAt: string;
+/* ── Word-by-word reveal ── */
+function WordReveal({
+  text,
+  delayStart = 0,
+  onComplete,
+  className = "",
+}: {
+  text: string;
+  delayStart?: number;
+  onComplete?: () => void;
+  className?: string;
+}) {
+  const words = text.split(" ");
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    if (completedRef.current) return;
+    const totalMs = delayStart + words.length * 120 + 400;
+    const t = setTimeout(() => {
+      completedRef.current = true;
+      onComplete?.();
+    }, totalMs);
+    return () => clearTimeout(t);
+  }, [delayStart, words.length, onComplete]);
+
+  return (
+    <span className={className}>
+      {words.map((word, i) => (
+        <span
+          key={i}
+          className="inline-block opacity-0 word-reveal"
+          style={{ animationDelay: `${delayStart + i * 120}ms` }}
+        >
+          {word}&nbsp;
+        </span>
+      ))}
+    </span>
+  );
 }
 
-const suggestions: { text: string; Icon: LucideIcon }[] = [
-  { text: "Come sarà il mio mese?", Icon: Moon },
-  { text: "Perché mi sento così?", Icon: Diamond },
-  { text: "Cosa non sto vedendo?", Icon: Eye },
-  { text: "Le mie sfide attuali", Icon: Sparkle },
-];
+export default function FiloPage() {
+  const [state, setState] = useState<FiloState>("idle");
+  const [selectedEmotion, setSelectedEmotion] = useState("");
+  const [customEmotion, setCustomEmotion] = useState("");
+  const [result, setResult] = useState<{
+    branchText: string;
+    trunkText: string;
+    rootText: string;
+  } | null>(null);
+  const [limitMessage, setLimitMessage] = useState("");
+  const [revealPhase, setRevealPhase] = useState(0); // 0=branch, 1=trunk, 2=root
+  const [sessionsToday, setSessionsToday] = useState(0);
 
-export default function ChiediPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  // Check daily count on mount
   useEffect(() => {
-    fetch("/api/chat")
+    fetch("/api/filo/ritual")
       .then((r) => r.json())
       .then((d) => {
-        if (d.messages) setMessages(d.messages);
-        setLoading(false);
+        setSessionsToday(d.count || 0);
+        if (!d.canStart) {
+          setState("limited");
+          setLimitMessage(
+            "Hai già attraversato molto oggi. Adesso resta con quello che hai trovato."
+          );
+        }
       })
-      .catch(() => setLoading(false));
+      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const submitEmotion = useCallback(
+    async (emotion: string) => {
+      if (!emotion.trim() || state === "loading") return;
 
-  const send = async (text?: string) => {
-    const msg = (text || input).trim();
-    if (!msg || sending) return;
+      setSelectedEmotion(emotion);
+      setState("loading");
 
-    setInput("");
-    setSending(true);
+      try {
+        const res = await fetch("/api/filo/ritual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ emotion: emotion.trim() }),
+        });
+        const data = await res.json();
 
-    // Optimistic: add user message immediately
-    const tempId = `temp-${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      { id: tempId, userMessage: msg, content: "", createdAt: new Date().toISOString() },
-    ]);
+        if (data.limited) {
+          setState("limited");
+          setLimitMessage(
+            data.message ||
+              "Hai già attraversato molto oggi. Adesso resta con quello che hai trovato."
+          );
+          return;
+        }
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
-      });
-      const data = await res.json();
+        if (data.error) {
+          setState("idle");
+          return;
+        }
 
-      if (!res.ok) {
-        const errorMsg = res.status === 402
-          ? "Crediti esauriti. Passa a Premium dal tuo profilo per continuare."
-          : data.error || "Errore nella risposta dell'oracolo.";
-        setMessages((prev) =>
-          prev.map((m) => m.id === tempId ? { ...m, content: errorMsg } : m)
-        );
-      } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === tempId
-              ? { ...m, id: data.id || tempId, content: data.response || "" }
-              : m
-          )
-        );
+        setResult(data);
+        setRevealPhase(0);
+        setState("revealed");
+        setSessionsToday((c) => c + 1);
+      } catch {
+        setState("idle");
       }
-    } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId
-            ? { ...m, content: "Errore di connessione. Riprova tra poco." }
-            : m
-        )
-      );
-    } finally {
-      setSending(false);
-    }
+    },
+    [state]
+  );
+
+  const handlePresetClick = (emotion: string) => {
+    if (state !== "idle") return;
+    setState("selected");
+    setSelectedEmotion(emotion);
+    // Small delay then submit
+    setTimeout(() => submitEmotion(emotion), 600);
+  };
+
+  const handleCustomSubmit = () => {
+    if (!customEmotion.trim() || state !== "idle") return;
+    setState("selected");
+    setSelectedEmotion(customEmotion.trim());
+    setTimeout(() => submitEmotion(customEmotion.trim()), 600);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      send();
+      handleCustomSubmit();
     }
   };
 
+  const reset = () => {
+    setState("idle");
+    setSelectedEmotion("");
+    setCustomEmotion("");
+    setResult(null);
+    setRevealPhase(0);
+  };
+
+  const isIdle = state === "idle";
+  const isSelected = state === "selected";
+  const isLoading = state === "loading";
+  const isRevealed = state === "revealed";
+  const isLimited = state === "limited";
+
   return (
-    <div className="min-h-screen flex flex-col relative stars-bg">
-      {/* Header */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.5, ease: premium }}
+      className="min-h-screen filo-bg flex flex-col items-center relative overflow-hidden"
+    >
+      {/* Logo */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ease: premium }}
-        className="px-4 pt-6 pb-3"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 1 }}
+        className="absolute top-6 left-0 right-0 text-center z-10"
       >
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl font-bold font-display">L&apos;Oracolo</h1>
-            <Link
-              href="/visions"
-              className="flex items-center gap-1 text-[10px] text-amber font-ui tracking-wide glass rounded-full px-3 py-1.5 hover:glow transition-all"
-            >
-              <Sparkle size={10} /> Tre Destini
-            </Link>
-          </div>
-          <p className="text-text-muted text-xs font-ui">Le stelle ascoltano. Chiedi ci&ograve; che il cuore vuole sapere.</p>
-        </div>
+        <span className="text-[10px] tracking-[0.3em] font-ui uppercase text-[#F0E6C8]/30">
+          <span className="text-[#F0E6C8]/50">un</span>consciousness
+        </span>
       </motion.div>
 
-      {/* Chat area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Empty state with suggestions */}
-          {messages.length === 0 && !loading && (
+      {/* Tree — always visible, centered */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <KalpavrikshaTree
+          className="w-[85vw] max-w-[400px] h-auto opacity-40"
+          breathing={isIdle || isRevealed}
+          windBlowing={isLoading}
+          branchesClosing={isLimited}
+          rootsMoving={isSelected}
+          color="#F0E6C8"
+        />
+      </div>
+
+      {/* Content layer */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full px-6 pb-24 pt-16">
+        <AnimatePresence mode="wait">
+          {/* ── IDLE: Question + Emotions ── */}
+          {(isIdle || isSelected) && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ ease: premium }}
-              className="flex flex-col items-center justify-center py-20"
-            >
-              <Sparkles size={56} className="text-amber mb-8 breathe" />
-              <h2 className="text-headline text-text-primary mb-3">Le stelle ascoltano.</h2>
-              <p className="text-text-secondary font-body italic text-base text-center mb-10 max-w-xs">
-                Ogni domanda che fai &egrave; un atto di coraggio cosmico.
-              </p>
-              <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
-                {suggestions.map((s) => (
-                  <button
-                    key={s.text}
-                    onClick={() => send(s.text)}
-                    className="glass rounded-2xl p-5 text-left hover:glow hover:border-amber/10 transition-all duration-300 group"
-                  >
-                    <s.Icon size={18} className="text-amber group-hover:scale-110 transition-transform mb-2" />
-                    <p className="text-sm text-text-secondary font-body">{s.text}</p>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Loading */}
-          {loading && (
-            <div className="flex items-center justify-center py-16">
-              <Sparkles size={36} className="text-amber ember-pulse" />
-            </div>
-          )}
-
-          {/* Messages */}
-          <AnimatePresence>
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ease: premium }}
-                className="mb-4"
-              >
-                {/* User message */}
-                {msg.userMessage && (
-                  <div className="flex justify-end mb-2">
-                    <div className="max-w-[80%] glass rounded-2xl rounded-br-sm px-4 py-3 border border-amber/10">
-                      <p className="text-sm text-text-primary font-body">{msg.userMessage}</p>
-                    </div>
-                  </div>
-                )}
-                {/* Oracle response */}
-                {msg.content ? (
-                  <div className="flex justify-start">
-                    <div className="max-w-[85%]">
-                      <div className="flex items-start gap-2">
-                        <Sparkle size={14} className="text-amber shrink-0 mt-1" />
-                        <MarkdownText content={msg.content} className="text-sm text-text-secondary font-body italic leading-relaxed" />
-                      </div>
-                    </div>
-                  </div>
-                ) : sending && msg.id.startsWith("temp-") ? (
-                  <div className="flex justify-start">
-                    <div className="flex items-center gap-2 py-2">
-                      <span className="w-1.5 h-1.5 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1.5 h-1.5 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1.5 h-1.5 bg-amber/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                      <span className="text-text-muted text-xs font-ui ml-1">L&apos;oracolo medita...</span>
-                    </div>
-                  </div>
-                ) : null}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Suggestion chips after messages exist */}
-          {messages.length > 0 && !sending && (
-            <motion.div
+              key="idle"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mt-2"
+              exit={{ opacity: 0, transition: { duration: 0.4 } }}
+              className="flex flex-col items-center w-full max-w-sm"
             >
-              {suggestions.map((s) => (
-                <button
-                  key={s.text}
-                  onClick={() => send(s.text)}
-                  className="shrink-0 flex items-center gap-1 glass rounded-full px-3 py-1.5 text-[10px] text-text-muted font-ui hover:text-amber hover:border-amber/10 transition-all"
+              {/* Question on the trunk area */}
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.8, ease: premium }}
+                className="text-center font-display text-xl text-[#F0E6C8]/90 mb-16 leading-relaxed"
+              >
+                Cosa ti sta spezzando adesso?
+              </motion.h1>
+
+              {/* Emotion grid — positioned in root area */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+                className="grid grid-cols-4 gap-x-4 gap-y-3 mb-8"
+              >
+                {PRESET_EMOTIONS.map((emotion, i) => {
+                  const isThis = selectedEmotion === emotion;
+                  const otherSelected =
+                    selectedEmotion && !isThis && isSelected;
+                  return (
+                    <motion.button
+                      key={emotion}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{
+                        opacity: otherSelected ? 0 : 1,
+                        y: 0,
+                        scale: isThis && isSelected ? 1.1 : 1,
+                      }}
+                      transition={{
+                        delay: 0.7 + i * 0.05,
+                        duration: 0.5,
+                        ease: premium,
+                      }}
+                      onClick={() => handlePresetClick(emotion)}
+                      disabled={state !== "idle"}
+                      className={`text-sm font-display tracking-wide transition-all duration-500 ${
+                        isThis && isSelected
+                          ? "text-[#F0E6C8] filo-selected-glow"
+                          : "text-[#F0E6C8]/50 hover:text-[#F0E6C8]/80"
+                      }`}
+                    >
+                      {emotion}
+                    </motion.button>
+                  );
+                })}
+              </motion.div>
+
+              {/* Custom input */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: isSelected ? 0 : 1,
+                }}
+                transition={{ delay: 1, duration: 0.6 }}
+                className="w-full max-w-xs"
+              >
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customEmotion}
+                    onChange={(e) => setCustomEmotion(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="oppure scrivi..."
+                    disabled={state !== "idle"}
+                    className="w-full bg-transparent border-b border-[#F0E6C8]/20 focus:border-[#F0E6C8]/40 text-[#F0E6C8]/80 text-sm font-body text-center py-2 placeholder:text-[#F0E6C8]/20 focus:outline-none transition-colors"
+                  />
+                  {customEmotion.trim() && (
+                    <button
+                      onClick={handleCustomSubmit}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 text-[#F0E6C8]/40 hover:text-[#F0E6C8]/70 transition-colors text-xs font-ui"
+                    >
+                      →
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Session counter */}
+              {sessionsToday > 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.2 }}
+                  className="text-[10px] text-[#F0E6C8]/20 font-ui mt-8"
                 >
-                  <s.Icon size={10} /> {s.text}
-                </button>
-              ))}
+                  {sessionsToday}/3 oggi
+                </motion.p>
+              )}
             </motion.div>
           )}
-        </div>
-      </div>
 
-      {/* Input area — fixed above tab bar */}
-      <div className="sticky bottom-0 glass border-t border-border/50 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Chiedi all'oracolo..."
-            aria-label="Chiedi all'oracolo"
-            rows={1}
-            className="flex-1 bg-bg-surface rounded-xl px-4 py-3 text-sm text-text-primary font-body placeholder:text-text-muted resize-none border border-amber/20 focus:border-amber/40 focus:outline-none transition-colors"
-            style={{ maxHeight: "120px" }}
-          />
-          <button
-            onClick={() => send()}
-            disabled={!input.trim() || sending}
-            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-              input.trim() && !sending
-                ? "bg-amber text-bg-base dimensional"
-                : "bg-bg-surface text-text-muted border border-border/50"
-            }`}
-          >
-            <Send size={14} />
-          </button>
-        </div>
+          {/* ── LOADING: Wind animation ── */}
+          {isLoading && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center"
+            >
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.5, 0.3, 0.5] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="text-[#F0E6C8]/40 text-sm font-display italic"
+              >
+                {selectedEmotion}
+              </motion.p>
+            </motion.div>
+          )}
+
+          {/* ── REVEALED: Three-part response ── */}
+          {isRevealed && result && (
+            <motion.div
+              key="revealed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center justify-between h-[70vh] max-h-[500px] w-full max-w-sm py-4"
+            >
+              {/* Branch text — top */}
+              <div className="text-center px-4">
+                <WordReveal
+                  text={result.branchText}
+                  delayStart={300}
+                  onComplete={() => setRevealPhase(1)}
+                  className="text-[#F0E6C8] text-lg font-display leading-relaxed"
+                />
+              </div>
+
+              {/* Trunk text — middle */}
+              <div className="text-center px-4">
+                {revealPhase >= 1 && (
+                  <WordReveal
+                    text={result.trunkText}
+                    delayStart={1000}
+                    onComplete={() => setRevealPhase(2)}
+                    className="text-[#F0E6C8]/70 text-base font-body italic leading-relaxed"
+                  />
+                )}
+              </div>
+
+              {/* Root text — bottom */}
+              <div className="text-center px-4">
+                {revealPhase >= 2 && (
+                  <WordReveal
+                    text={result.rootText}
+                    delayStart={1000}
+                    className="text-[#F0E6C8]/50 text-sm font-body leading-relaxed"
+                  />
+                )}
+              </div>
+
+              {/* Restart button — appears after full reveal */}
+              {revealPhase >= 2 && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 3 }}
+                  onClick={reset}
+                  className="text-[10px] text-[#F0E6C8]/20 font-ui tracking-widest hover:text-[#F0E6C8]/40 transition-colors mt-4"
+                >
+                  ricomincia
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── LIMITED: Branches close ── */}
+          {isLimited && (
+            <motion.div
+              key="limited"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1 }}
+              className="flex flex-col items-center text-center px-8"
+            >
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 1, ease: premium }}
+                className="text-[#F0E6C8]/60 text-base font-display italic leading-relaxed max-w-xs"
+              >
+                {limitMessage}
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }

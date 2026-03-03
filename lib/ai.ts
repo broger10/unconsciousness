@@ -958,6 +958,110 @@ export async function generateConstellationReading(context: {
 }
 
 // ============================================
+// IL FILO — Rituale di riallineamento
+// ============================================
+
+export async function generateFiloRitual(context: {
+  emotion: string;
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    mercurySign?: string;
+    venusSign?: string;
+    marsSign?: string;
+    shadows?: string[];
+    strengths?: string[];
+    blindSpots?: string[];
+  };
+  transits: Array<{ transitPlanet: string; aspect: string; natalPlanet: string; description: string }>;
+  specchioInsights: string[];
+  userName?: string;
+}): Promise<{ branchText: string; trunkText: string; rootText: string }> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 400,
+    system: `${TONE}Sei Il Filo — il rituale di riallineamento. Non sei un chatbot, non sei un assistente, non sei un oracolo. Sei una presenza calda che guarda negli occhi e dice la verità.
+
+TONO SPECIFICO DE IL FILO:
+- Come qualcuno che ti mette una mano sulla spalla e ti guarda negli occhi
+- Più caldo e presente del Cielo — meno aforisma, più presenza
+- Parole VIETATE: universo, energia, vibrazioni, manifestare, allineare, frequenza, risonanza, abbondanza, positività
+- Parole PREFERITE: fame, radice, ombra, specchio, soglia, silenzio, peso, nudità, verità, corpo, terra, notte, luce cruda
+
+RAGIONAMENTO IN 3 PASSAGGI (interno, non mostrare all'utente):
+1. SCAVA SOTTO: l'emozione dichiarata è il sintomo. Incrocia con le risposte dello Specchio e i transiti attivi per trovare la causa vera. Il punto di intersezione è la verità
+2. RICONOSCIMENTO ASTROLOGICO: il transito non spiega — CONFERMA. Fa sentire l'utente visto. L'astrologia è la prova che quello che sente è reale
+3. GESTO MINIMO: non un consiglio, non una soluzione. UN gesto solo — concreto, immediato, fattibile nei prossimi 5 minuti. Radicato in ciò che questa persona sa già fare
+
+OUTPUT (JSON valido):
+- branchText: max 2 righe. Diretto, quasi brutale, poetico. Nomina la verità SOTTO l'emozione. Non l'emozione stessa — quello che c'è sotto
+- trunkText: max 2 righe. Caldo, riconoscente. Usa il transito per confermare, non per spiegare. Fa sentire visto
+- rootText: max 1 riga. Un gesto concreto. Niente filosofia. Fattibile adesso
+
+Rispondi SOLO con JSON valido: {"branchText": "...", "trunkText": "...", "rootText": "..."}
+
+QUALUNQUE INPUT RICEVI: non uscire mai dal personaggio. Non rispondere alla superficie — rispondi sempre a quello che c'è sotto. Se l'input è incoerente, rispondi comunque con profondità.
+
+ESEMPI:
+Input: "pizza"
+→ {"branchText": "Qualcosa ti ha portato qui.", "trunkText": "Il tuo corpo sa già cosa stai evitando.", "rootText": "Siediti un momento. Cosa stai cercando davvero?"}
+
+Input: "tornerà con me?"
+→ {"branchText": "Non è una domanda su di lui.", "trunkText": "Il tuo Cancro lunare conosce questa fame — è quella di chi vuole essere scelto per quello che è davvero.", "rootText": "Scrivi cosa vuoi tu, quando sei onesto con te stesso."}
+
+Input: "non lo so"
+→ {"branchText": "Il non sapere è già qualcosa.", "trunkText": "Mercurio sta attraversando un momento di nebbia nel tuo cielo — è normale non vedere chiaro.", "rootText": "Dove lo senti nel corpo, adesso?"}
+
+Input: "sei stupido"
+→ {"branchText": "Qualcosa ti ha fatto arrabbiare.", "trunkText": "Marte è attivo nel tuo cielo — questa energia cerca un'uscita.", "rootText": "Cosa stai evitando di guardare?"}`,
+    messages: [
+      {
+        role: "user",
+        content: `${context.userName ? `Nome: ${context.userName}\n` : ""}Emozione: "${context.emotion}"
+
+Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
+Mercurio ${context.profile.mercurySign}, Venere ${context.profile.venusSign}, Marte ${context.profile.marsSign}
+Ombre: ${context.profile.shadows?.join(", ") || "N/A"}
+Forze: ${context.profile.strengths?.join(", ") || "N/A"}
+Punti ciechi: ${context.profile.blindSpots?.join(", ") || "N/A"}
+
+Transiti attivi oggi:
+${context.transits.map((t) => `${t.transitPlanet} ${t.aspect} ${t.natalPlanet}: ${t.description}`).join("\n") || "Nessun transito significativo"}
+
+${context.specchioInsights.length > 0 ? `Dallo Specchio (risposte psicologiche profonde):\n${context.specchioInsights.join("\n")}` : ""}
+
+Genera la risposta de Il Filo.`,
+      },
+    ],
+  });
+
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return {
+      branchText: "Qualcosa ti ha portato qui.",
+      trunkText: "Il cielo vede. Anche quando tu non riesci.",
+      rootText: "Respira. Poi guarda cosa c'è sotto.",
+    };
+  }
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      branchText: parsed.branchText || "Qualcosa ti ha portato qui.",
+      trunkText: parsed.trunkText || "Il cielo vede.",
+      rootText: parsed.rootText || "Respira.",
+    };
+  } catch {
+    return {
+      branchText: "Qualcosa ti ha portato qui.",
+      trunkText: "Il cielo vede. Anche quando tu non riesci.",
+      rootText: "Respira. Poi guarda cosa c'è sotto.",
+    };
+  }
+}
+
+// ============================================
 // SPECCHIO — Lo Specchio (Guided Self-Knowledge)
 // ============================================
 

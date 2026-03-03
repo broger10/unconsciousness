@@ -30,6 +30,7 @@ model User {
   constellations    Constellation[]
   specchioCapitoli  SpecchioCapitolo[]
   specchioConsigli  SpecchioConsiglio[]
+  filoSessions      FiloSession[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -338,4 +339,19 @@ model Constellation {
 
   @@index([userId])
   @@index([userId, dominantPlanet])
+}
+
+model FiloSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emotion     String
+  emotionRaw  String?
+  branchText  String   @db.Text
+  trunkText   String   @db.Text
+  rootText    String   @db.Text
+  transitUsed Json
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
