@@ -1,229 +1,238 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Compass, Sun, Moon, Eye, Sparkle, TrendingUp,
-  MoonStar, ChevronLeft, ChevronRight, X,
-} from "lucide-react";
+import { Compass, X, Sparkle } from "lucide-react";
+import { PLANET_SYMBOLS } from "@/lib/astro-constants";
 
 const premium = [0.16, 1, 0.3, 1] as const;
 
-interface MapInsightData {
+interface MapStarData {
   id: string;
   date: string;
-  type: "star" | "constellation";
-  content: string;
-  category: string;
-  metadata: {
-    x?: number;
-    y?: number;
-    brightness?: number;
-    name?: string;
-    starIds?: string[];
-  } | null;
-  read: boolean;
+  starX: number;
+  starY: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+  respiro: string;
+  seme: string;
+  dominantPlanet: string;
+  dominantPlanetSign: string;
+  transitDescription: string;
+  themeColor: string;
+  mood: number | null;
+  brightness: number;
+  specchioSlug: string | null;
 }
 
-const categoryConfig: Record<string, { icon: typeof Sun; color: string; label: string; hex: string }> = {
-  transit: { icon: Sun, color: "text-amber", label: "Transito", hex: "#C9A84C" },
-  shadow: { icon: Eye, color: "text-sienna", label: "Ombra", hex: "#C4614A" },
-  mirror: { icon: MoonStar, color: "text-text-secondary", label: "Specchio", hex: "#8BAF8D" },
-  growth: { icon: TrendingUp, color: "text-verdigris", label: "Crescita", hex: "#4A9B8E" },
-  lunar: { icon: Moon, color: "text-text-primary", label: "Lunare", hex: "#F0E6C8" },
-};
+interface ConstellationData {
+  id: string;
+  name: string;
+  reading: string;
+  dominantPlanet: string;
+  starDates: string[];
+  metadata: { centerX: number; centerY: number; cartografoAnalysis?: string } | null;
+}
 
-/* ─── Moon Phase SVG ─── */
-function MoonPhaseIcon({ className }: { className?: string }) {
-  const now = new Date();
-  const dayOfYear = Math.floor(
-    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  // Approximate lunar cycle: 29.53 days
-  const phase = ((dayOfYear % 29.53) / 29.53) * 100;
+/* ─── Onboarding Overlay ─── */
+function OnboardingOverlay({ onDismiss }: { onDismiss: () => void }) {
+  const [visible, setVisible] = useState(true);
 
-  // phase 0-100: 0=new, 25=first quarter, 50=full, 75=last quarter
-  const illumination = phase <= 50 ? phase / 50 : (100 - phase) / 50;
-  const isWaxing = phase <= 50;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisible(false);
+      onDismiss();
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
 
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" className={className}>
-      <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(240,230,200,0.15)" strokeWidth="0.5" />
-      <circle cx="16" cy="16" r="14" fill="rgba(240,230,200,0.03)" />
-      {/* Illuminated portion */}
-      <clipPath id="moonClip">
-        <circle cx="16" cy="16" r="14" />
-      </clipPath>
-      <ellipse
-        cx={isWaxing ? 16 + (1 - illumination) * 14 : 16 - (1 - illumination) * 14}
-        cy="16"
-        rx={14 * illumination}
-        ry="14"
-        fill="rgba(240,230,200,0.25)"
-        clipPath="url(#moonClip)"
-      />
-    </svg>
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0 z-40 flex flex-col items-center justify-center px-8 pointer-events-none"
+        >
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-text-primary text-lg font-body italic text-center leading-relaxed mb-3"
+          >
+            Questo è il tuo cielo. Era già tutto qui.
+            <br />
+            Ogni giorno che torni, una stella si riconosce.
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="text-text-secondary text-sm font-body italic text-center"
+          >
+            Ogni giorno che apri Il Cielo, una stella si illumina.
+          </motion.p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
-/* ─── Star component ─── */
-function Star({
+/* ─── Star Component ─── */
+function MapStar({
   star,
   isToday,
-  onClick,
+  isNewlyUnlocked,
+  onTap,
+  trembling,
 }: {
-  star: MapInsightData;
+  star: MapStarData;
   isToday: boolean;
-  onClick: () => void;
+  isNewlyUnlocked: boolean;
+  onTap: () => void;
+  trembling: boolean;
 }) {
-  const config = categoryConfig[star.category] || categoryConfig.mirror;
-  const x = star.metadata?.x ?? 50;
-  const y = star.metadata?.y ?? 50;
-  const brightness = star.metadata?.brightness ?? 0.7;
-  const size = isToday ? 14 : star.category === "lunar" ? 10 : 7;
+  const size = isToday ? 10 : 6;
+
+  if (!star.unlocked) {
+    return (
+      <div
+        className="absolute rounded-full star-dim"
+        style={{
+          left: `${star.starX}%`,
+          top: `${star.starY}%`,
+          width: size,
+          height: size,
+          backgroundColor: "rgba(240,230,200,0.5)",
+          transform: "translate(-50%, -50%)",
+        }}
+      />
+    );
+  }
 
   return (
     <motion.button
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: brightness }}
-      transition={{ duration: 0.6, ease: premium, delay: isToday ? 0.3 : Math.random() * 0.5 }}
-      onClick={onClick}
-      className={`absolute rounded-full ${isToday ? "star-today" : "star-glow"} ${!star.read && !isToday ? "ring-1 ring-amber/30" : ""}`}
+      layoutId={`star-${star.id}`}
+      onClick={onTap}
+      className={`absolute rounded-full ${
+        isNewlyUnlocked ? "star-bloom" : "star-breathe"
+      } ${trembling ? "star-tremble" : ""}`}
       style={{
-        left: `${x}%`,
-        top: `${y}%`,
+        left: `${star.starX}%`,
+        top: `${star.starY}%`,
         width: size,
         height: size,
-        backgroundColor: config.hex,
-        color: config.hex,
+        backgroundColor: star.themeColor,
+        "--star-color": star.themeColor,
+        "--star-brightness": star.brightness,
         transform: "translate(-50%, -50%)",
+        opacity: star.brightness,
         zIndex: isToday ? 20 : 10,
-      }}
-      aria-label={`Stella: ${star.category}`}
+      } as React.CSSProperties}
+      aria-label={`Stella del ${star.date}`}
     />
   );
 }
 
-/* ─── Constellation lines ─── */
-function ConstellationLines({
-  stars,
-  constellation,
-}: {
-  stars: MapInsightData[];
-  constellation: MapInsightData;
-}) {
-  const starIds = (constellation.metadata?.starIds || []) as string[];
-  const connectedStars = stars.filter((s) => starIds.includes(s.id));
-  if (connectedStars.length < 2) return null;
-
-  const points = connectedStars.map((s) => ({
-    x: s.metadata?.x ?? 50,
-    y: s.metadata?.y ?? 50,
-  }));
-
-  // Build path through all points
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <motion.path
-        d={pathD}
-        fill="none"
-        stroke="rgba(201,169,110,0.2)"
-        strokeWidth="0.18"
-        strokeLinecap="round"
-        strokeDasharray="0.8 0.4"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 2.5, ease: premium }}
-      />
-    </svg>
-  );
-}
-
-/* ─── Star Detail Sheet ─── */
+/* ─── Star Detail ─── */
 function StarDetail({
   star,
   onClose,
-  onMarkRead,
 }: {
-  star: MapInsightData;
+  star: MapStarData;
   onClose: () => void;
-  onMarkRead: (id: string) => void;
 }) {
-  const config = categoryConfig[star.category] || categoryConfig.mirror;
-  const Icon = config.icon;
-  const date = new Date(star.date);
-  const dateStr = date.toLocaleDateString("it-IT", { day: "numeric", month: "long" });
-  const isConstellation = star.type === "constellation";
-
-  useEffect(() => {
-    if (!star.read) {
-      onMarkRead(star.id);
-    }
-  }, [star.id, star.read, onMarkRead]);
+  const dateStr = new Date(star.date).toLocaleDateString("it-IT", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const planetSymbol = PLANET_SYMBOLS[star.dominantPlanet] || "☉";
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-      {/* Sheet */}
       <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ duration: 0.4, ease: premium }}
+        layoutId={`star-${star.id}`}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg mx-4 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl glass dimensional overflow-hidden"
+        className="relative w-[90vw] max-w-md rounded-2xl glass dimensional overflow-hidden"
+        transition={{ duration: 0.5, ease: premium }}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-8 h-1 rounded-full bg-text-muted/30" />
-        </div>
+        {/* Glow behind */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-30"
+          style={{ backgroundColor: star.themeColor }}
+        />
 
-        <div className="px-6 pb-6 pt-2 relative">
-          {/* Subtle glow behind content */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full blur-[60px] pointer-events-none opacity-30" style={{ backgroundColor: config.hex }} />
+        <div className="relative px-6 py-8">
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-bg-glass transition-colors"
+          >
+            <X size={16} className="text-text-muted" />
+          </button>
 
-          {/* Header */}
-          <div className="relative flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${config.hex}15`, boxShadow: `0 0 12px ${config.hex}20` }}
-              >
-                <Icon size={16} style={{ color: config.hex }} />
-              </div>
-              <div>
-                <div className={`text-xs font-display tracking-wide ${config.color}`}>
-                  {isConstellation ? (star.metadata?.name as string) || "Costellazione" : config.label.toUpperCase()}
-                </div>
-                <div className="text-[11px] text-text-muted font-body">{dateStr}</div>
-              </div>
-            </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-bg-glass transition-colors">
-              <X size={16} className="text-text-muted" />
-            </button>
-          </div>
+          {/* Date */}
+          <div className="text-xs text-text-muted font-ui mb-4">{dateStr}</div>
 
-          {/* Content */}
-          <p className="relative text-text-primary font-body text-lg leading-relaxed italic">
-            {isConstellation ? `\u201C${star.content}\u201D` : star.content}
+          {/* Il Respiro */}
+          <p className="text-text-primary text-xl font-display leading-relaxed mb-6">
+            {star.respiro}
           </p>
 
-          {isConstellation && (
-            <div className="mt-5 pt-3 border-t border-border/20">
-              <div className="text-[11px] text-text-secondary font-ui tracking-wide flex items-center gap-1.5">
-                <Sparkle size={10} style={{ color: config.hex }} />
-                COSTELLAZIONE SETTIMANALE
+          {/* Transit info */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl" style={{ color: star.themeColor }}>
+              {planetSymbol}
+            </span>
+            <div>
+              <div className="text-sm text-text-secondary font-body">
+                {star.transitDescription}
               </div>
+              <div className="text-xs text-text-muted font-ui">
+                {star.dominantPlanet} in {star.dominantPlanetSign}
+              </div>
+            </div>
+          </div>
+
+          {/* Mood */}
+          {star.mood && (
+            <div className="text-xs text-text-muted font-ui mb-4">
+              Mood: {"●".repeat(star.mood)}{"○".repeat(5 - star.mood)}
+            </div>
+          )}
+
+          {/* Il Seme */}
+          <div className="border-t border-border/20 pt-4 mt-4">
+            <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-2">
+              IL SEME
+            </div>
+            <p className="text-text-secondary text-sm font-body italic">
+              {star.seme}
+            </p>
+          </div>
+
+          {/* Specchio connection */}
+          {star.specchioSlug && (
+            <div className="border-t border-border/20 pt-3 mt-3">
+              <div className="text-[10px] font-ui tracking-[0.2em] mb-1" style={{ color: star.themeColor }}>
+                CONNESSIONE SPECCHIO
+              </div>
+              <p className="text-text-muted text-xs font-body">
+                Capitolo: {star.specchioSlug}
+              </p>
             </div>
           )}
         </div>
@@ -232,46 +241,132 @@ function StarDetail({
   );
 }
 
-/* ─── Week Selector ─── */
-function WeekSelector({
-  weekOffset,
-  onPrev,
-  onNext,
+/* ─── Constellation Overlay ─── */
+function ConstellationOverlay({
+  constellation,
+  stars,
+  onTap,
 }: {
-  weekOffset: number;
-  onPrev: () => void;
-  onNext: () => void;
+  constellation: ConstellationData;
+  stars: MapStarData[];
+  onTap: () => void;
 }) {
-  const today = new Date();
-  const weekStart = new Date(today);
-  weekStart.setDate(weekStart.getDate() - weekOffset * 7 - today.getDay() + 1);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
+  const connectedStars = stars.filter((s) =>
+    constellation.starDates.some((d) => d.split("T")[0] === s.date)
+  );
+  if (connectedStars.length < 2) return null;
 
-  const fmt = (d: Date) => d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  const sorted = [...connectedStars].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const pathD = sorted
+    .map((s, i) => `${i === 0 ? "M" : "L"} ${s.starX} ${s.starY}`)
+    .join(" ");
+
+  const centerX = constellation.metadata?.centerX ?? avg(sorted.map((s) => s.starX));
+  const centerY = constellation.metadata?.centerY ?? avg(sorted.map((s) => s.starY));
 
   return (
-    <div className="flex items-center justify-center gap-3">
-      <button
-        onClick={onPrev}
-        className="p-1.5 rounded-lg hover:bg-bg-glass transition-colors"
-        aria-label="Settimana precedente"
+    <>
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
       >
-        <ChevronLeft size={14} className="text-text-muted" />
-      </button>
-      <span className="text-xs text-text-secondary font-ui tracking-wide min-w-[120px] text-center">
-        {weekOffset === 0 ? "Questa settimana" : `${fmt(weekStart)} – ${fmt(weekEnd)}`}
-      </span>
+        <path
+          d={pathD}
+          fill="none"
+          stroke="rgba(201,169,110,0.2)"
+          strokeWidth="0.15"
+          strokeLinecap="round"
+          className="constellation-line"
+        />
+      </svg>
       <button
-        onClick={onNext}
-        disabled={weekOffset === 0}
-        className="p-1.5 rounded-lg hover:bg-bg-glass transition-colors disabled:opacity-20"
-        aria-label="Settimana successiva"
+        onClick={onTap}
+        className="absolute z-15 pointer-events-auto"
+        style={{
+          left: `${centerX}%`,
+          top: `${Math.min(centerY + 5, 90)}%`,
+          transform: "translateX(-50%)",
+        }}
       >
-        <ChevronRight size={14} className="text-text-muted" />
+        <span className="text-xs text-amber/50 font-display italic tracking-wide">
+          {constellation.name}
+        </span>
       </button>
-    </div>
+    </>
   );
+}
+
+/* ─── Constellation Detail ─── */
+function ConstellationDetail({
+  constellation,
+  onClose,
+}: {
+  constellation: ConstellationData;
+  onClose: () => void;
+}) {
+  const planetSymbol = PLANET_SYMBOLS[constellation.dominantPlanet] || "☉";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.4, ease: premium }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-[90vw] max-w-md rounded-2xl glass dimensional overflow-hidden"
+      >
+        <div className="px-6 py-8">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-bg-glass transition-colors"
+          >
+            <X size={16} className="text-text-muted" />
+          </button>
+
+          <div className="flex items-center gap-2 mb-6">
+            <span className="text-3xl text-amber">{planetSymbol}</span>
+            <div>
+              <h2 className="text-xl font-display text-amber">
+                {constellation.name}
+              </h2>
+              <p className="text-xs text-text-muted font-ui">
+                {constellation.starDates.length} stelle · {constellation.dominantPlanet}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {constellation.reading.split("\n").map((line, i) => (
+              <motion.p
+                key={i}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.15 }}
+                className="text-text-primary font-body text-base leading-relaxed italic"
+              >
+                {line}
+              </motion.p>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function avg(nums: number[]): number {
+  return nums.length === 0 ? 50 : nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
 /* ─── Empty State ─── */
@@ -292,7 +387,8 @@ function EmptySky() {
           Il tuo cielo si sta formando.
         </p>
         <p className="text-text-muted text-xs font-body italic text-center leading-relaxed">
-          Ogni giorno una nuova stella apparir&agrave; qui sopra,<br />
+          Ogni giorno una nuova stella apparirà qui sopra,
+          <br />
           tracciando la mappa della tua coscienza.
         </p>
       </motion.div>
@@ -305,58 +401,90 @@ function EmptySky() {
    ──────────────────────────────────────────────────────── */
 
 export default function MappaPage() {
-  const [stars, setStars] = useState<MapInsightData[]>([]);
-  const [constellations, setConstellations] = useState<MapInsightData[]>([]);
-  const [todayStar, setTodayStar] = useState<MapInsightData | null>(null);
+  const [stars, setStars] = useState<MapStarData[]>([]);
+  const [constellations, setConstellations] = useState<ConstellationData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStar, setSelectedStar] = useState<MapInsightData | null>(null);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [todayStarId, setTodayStarId] = useState<string | null>(null);
+  const [selectedStar, setSelectedStar] = useState<MapStarData | null>(null);
+  const [selectedConstellation, setSelectedConstellation] = useState<ConstellationData | null>(null);
+  const [skyRevealed, setSkyRevealed] = useState(false);
+  const [tremblingStars, setTremblingStars] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch("/api/mappa/daily")
       .then((r) => r.json())
       .then((d) => {
-        if (d.today) setTodayStar(d.today);
-        if (d.stars) setStars(d.stars);
-        if (d.constellations) setConstellations(d.constellations);
+        setStars(d.stars ?? []);
+        setConstellations(d.constellations ?? []);
+        setShowOnboarding(d.showOnboarding ?? false);
+        setTodayStarId(d.todayStarId ?? null);
         setLoading(false);
+
+        // Sky reveal
+        setTimeout(() => setSkyRevealed(true), 100);
+
+        // Trigger tremble on nearby stars after today's bloom
+        if (d.todayStarId) {
+          const todayStar = (d.stars as MapStarData[])?.find((s) => s.id === d.todayStarId);
+          if (todayStar) {
+            setTimeout(() => {
+              const nearby = (d.stars as MapStarData[])
+                .filter(
+                  (s) =>
+                    s.id !== d.todayStarId &&
+                    s.unlocked &&
+                    Math.abs(s.starX - todayStar.starX) < 20 &&
+                    Math.abs(s.starY - todayStar.starY) < 20
+                )
+                .map((s) => s.id);
+              setTremblingStars(new Set(nearby));
+              setTimeout(() => setTremblingStars(new Set()), 800);
+            }, 2500);
+          }
+        }
       })
       .catch(() => setLoading(false));
   }, []);
 
-  const markRead = useCallback((id: string) => {
+  const dismissOnboarding = useCallback(() => {
     fetch("/api/mappa/daily", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ insightId: id }),
+      body: JSON.stringify({ action: "onboardingShown" }),
     }).catch(() => {});
+  }, []);
 
-    setStars((prev) => prev.map((s) => (s.id === id ? { ...s, read: true } : s)));
-    if (todayStar?.id === id) setTodayStar((prev) => prev ? { ...prev, read: true } : prev);
-  }, [todayStar?.id]);
+  // Auto-tighten view based on unlocked stars
+  const viewBounds = useMemo(() => {
+    const unlocked = stars.filter((s) => s.unlocked);
+    if (unlocked.length < 3) {
+      return { minX: 0, maxX: 100, minY: 0, maxY: 100 };
+    }
+    const padding = 15;
+    const xs = unlocked.map((s) => s.starX);
+    const ys = unlocked.map((s) => s.starY);
+    return {
+      minX: Math.max(0, Math.min(...xs) - padding),
+      maxX: Math.min(100, Math.max(...xs) + padding),
+      minY: Math.max(0, Math.min(...ys) - padding),
+      maxY: Math.min(100, Math.max(...ys) + padding),
+    };
+  }, [stars]);
 
-  // Filter stars by selected week
-  const filteredStars = stars.filter((s) => {
-    const starDate = new Date(s.date);
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(weekStart.getDate() - weekOffset * 7 - today.getDay() + 1);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    return starDate >= weekStart && starDate < weekEnd;
-  });
+  const mapToView = useCallback(
+    (x: number, y: number) => {
+      const rangeX = viewBounds.maxX - viewBounds.minX || 100;
+      const rangeY = viewBounds.maxY - viewBounds.minY || 100;
+      return {
+        vx: ((x - viewBounds.minX) / rangeX) * 100,
+        vy: ((y - viewBounds.minY) / rangeY) * 100,
+      };
+    },
+    [viewBounds]
+  );
 
-  const weekConstellations = constellations.filter((c) => {
-    const cDate = new Date(c.date);
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(weekStart.getDate() - weekOffset * 7 - today.getDay() + 1);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    return cDate >= weekStart && cDate < weekEnd;
-  });
+  const unlockedCount = stars.filter((s) => s.unlocked).length;
 
   if (loading) {
     return (
@@ -369,161 +497,132 @@ export default function MappaPage() {
     );
   }
 
-  const todayDate = new Date().toLocaleDateString("it-IT", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <div className="min-h-screen cielo-bg relative overflow-hidden">
-      {/* Dust particles overlay */}
+      {/* Dust particles */}
       <div className="absolute inset-0 cielo-dust pointer-events-none" />
 
-      {/* Header */}
+      {/* Sky fade from black */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ease: premium }}
-        className="relative z-20 pt-6 pb-2 px-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: skyRevealed ? 1 : 0 }}
+        transition={{ duration: 1.8, ease: "easeOut" }}
+        className="absolute inset-0"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold font-display">Il Cielo Interiore</h1>
-            <p className="text-xs text-text-secondary font-body italic">{todayDate}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {stars.length > 0 && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-[11px] text-amber/60 font-ui"
-              >
-                {stars.length} {stars.length === 1 ? "stella" : "stelle"}
-              </motion.span>
+        {/* Header */}
+        <div className="relative z-20 pt-6 pb-2 px-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold font-display">La Mappa</h1>
+            {unlockedCount > 0 && (
+              <span className="text-[11px] text-amber/60 font-ui">
+                {unlockedCount} {unlockedCount === 1 ? "stella" : "stelle"}
+              </span>
             )}
-            <MoonPhaseIcon />
           </div>
+        </div>
+
+        {/* Star Field */}
+        <div
+          className="relative z-10 mx-2"
+          style={{ height: "calc(100vh - 140px)" }}
+        >
+          {/* Ambient glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse at 50% 45%, rgba(201,168,76,0.03) 0%, transparent 60%)",
+            }}
+          />
+          {/* Horizon fade */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+            style={{
+              background: "linear-gradient(to top, rgba(10,26,15,0.8) 0%, transparent 100%)",
+            }}
+          />
+
+          {stars.length === 0 ? (
+            <EmptySky />
+          ) : (
+            <>
+              {/* All stars */}
+              {stars.map((star) => {
+                const { vx, vy } = mapToView(star.starX, star.starY);
+                const isToday = star.id === todayStarId;
+                const isNewlyUnlocked =
+                  isToday &&
+                  !!star.unlockedAt &&
+                  Date.now() - new Date(star.unlockedAt).getTime() < 10000;
+
+                return (
+                  <MapStar
+                    key={star.id}
+                    star={{ ...star, starX: vx, starY: vy }}
+                    isToday={isToday}
+                    isNewlyUnlocked={isNewlyUnlocked}
+                    onTap={() => star.unlocked && setSelectedStar(star)}
+                    trembling={tremblingStars.has(star.id)}
+                  />
+                );
+              })}
+
+              {/* Constellation lines */}
+              {constellations.map((c) => (
+                <ConstellationOverlay
+                  key={c.id}
+                  constellation={c}
+                  stars={stars.map((s) => {
+                    const { vx, vy } = mapToView(s.starX, s.starY);
+                    return { ...s, starX: vx, starY: vy };
+                  })}
+                  onTap={() => setSelectedConstellation(c)}
+                />
+              ))}
+
+              {/* Today's star label */}
+              {todayStarId && (() => {
+                const today = stars.find((s) => s.id === todayStarId);
+                if (!today) return null;
+                const { vx, vy } = mapToView(today.starX, today.starY);
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 3, duration: 0.8 }}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: `${vx}%`,
+                      top: `${vy + 4}%`,
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    <span className="text-[11px] font-display italic tracking-wider text-amber star-glow-text">
+                      oggi
+                    </span>
+                  </motion.div>
+                );
+              })()}
+            </>
+          )}
         </div>
       </motion.div>
 
-      {/* Week Selector */}
-      <div className="relative z-20 px-4 py-2">
-        <WeekSelector
-          weekOffset={weekOffset}
-          onPrev={() => setWeekOffset((o) => Math.min(o + 1, 3))}
-          onNext={() => setWeekOffset((o) => Math.max(o - 1, 0))}
-        />
-      </div>
+      {/* Onboarding overlay */}
+      {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
 
-      {/* Star Field */}
-      <div className="relative z-10 mx-4" style={{ height: "calc(100vh - 200px)" }}>
-        {/* Ambient center glow */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: "radial-gradient(ellipse at 50% 45%, rgba(201,168,76,0.04) 0%, transparent 60%)",
-        }} />
-        {/* Horizon fade at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none" style={{
-          background: "linear-gradient(to top, rgba(10,26,15,0.8) 0%, transparent 100%)",
-        }} />
-
-        {filteredStars.length === 0 && weekOffset > 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-text-secondary text-sm font-body italic">Nessuna stella in questa settimana.</p>
-          </div>
-        ) : filteredStars.length === 0 ? (
-          <EmptySky />
-        ) : (
-          <>
-            {/* Constellation lines */}
-            {weekConstellations.map((c) => (
-              <ConstellationLines
-                key={c.id}
-                stars={filteredStars}
-                constellation={c}
-              />
-            ))}
-
-            {/* Stars */}
-            {filteredStars.map((star) => (
-              <Star
-                key={star.id}
-                star={star}
-                isToday={weekOffset === 0 && todayStar?.id === star.id}
-                onClick={() => setSelectedStar(star)}
-              />
-            ))}
-          </>
-        )}
-
-        {/* Constellation name overlay */}
-        {weekConstellations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5, duration: 1 }}
-            className="absolute bottom-24 left-0 right-0 text-center pointer-events-none"
-          >
-            {weekConstellations.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedStar(c)}
-                className="pointer-events-auto"
-              >
-                <span className="text-sm text-amber/60 font-display italic tracking-wide">
-                  {(c.metadata?.name as string) || "Costellazione"}
-                </span>
-              </button>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Today's star label */}
-        {weekOffset === 0 && todayStar && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${todayStar.metadata?.x ?? 50}%`,
-              top: `${(todayStar.metadata?.y ?? 50) + 4}%`,
-              transform: "translateX(-50%)",
-            }}
-          >
-            <span className={`text-[11px] font-display italic tracking-wider ${!todayStar.read ? "text-amber star-glow-text" : "text-text-secondary"}`}>
-              {!todayStar.read ? "nuova stella" : "oggi"}
-            </span>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Legend */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="relative z-20 px-6 pb-20 flex justify-center gap-5 flex-wrap"
-      >
-        {Object.entries(categoryConfig).map(([key, cfg]) => (
-          <div key={key} className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: cfg.hex, boxShadow: `0 0 6px ${cfg.hex}60` }}
-            />
-            <span className="text-[11px] text-text-secondary font-ui">{cfg.label}</span>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Star Detail Modal */}
+      {/* Star detail modal */}
       <AnimatePresence>
         {selectedStar && (
-          <StarDetail
-            star={selectedStar}
-            onClose={() => setSelectedStar(null)}
-            onMarkRead={markRead}
+          <StarDetail star={selectedStar} onClose={() => setSelectedStar(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Constellation detail modal */}
+      <AnimatePresence>
+        {selectedConstellation && (
+          <ConstellationDetail
+            constellation={selectedConstellation}
+            onClose={() => setSelectedConstellation(null)}
           />
         )}
       </AnimatePresence>

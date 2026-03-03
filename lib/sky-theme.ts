@@ -1,4 +1,5 @@
 import type { AspectType } from "./astro-constants";
+import { SIGN_DEGREES } from "./astro-constants";
 
 // Planetary DNA — HSL color identity for each planet
 const PLANET_HSL: Record<string, { h: number; s: number; l: number }> = {
@@ -111,5 +112,41 @@ export function computeDailyTheme(
       "--sky-secondary": secondary,
       "--sky-accent": accent,
     },
+  };
+}
+
+/**
+ * Compute star X/Y for La Mappa from significant transits.
+ * X = zodiacal position of dominant transit planet's sign (0-100)
+ * Y = transit intensity inverted (high weight = top = low Y), range 10-85
+ */
+export function computeStarPosition(
+  significantTransits: Array<{ transitPlanet: string; weight: number }>,
+  currentPositions: Array<{ planet: string; sign: string }>
+): { starX: number; starY: number } {
+  if (significantTransits.length === 0) {
+    return { starX: 50, starY: 50 };
+  }
+
+  const dominant = significantTransits[0];
+
+  // Find the current sign of the dominant transit planet
+  const dominantPosition = currentPositions.find(
+    (p) => p.planet === dominant.transitPlanet
+  );
+  const dominantSign = dominantPosition?.sign ?? "Ariete";
+  const signDegree = SIGN_DEGREES[dominantSign] ?? 15;
+
+  // X: zodiacal degree mapped to 0-100
+  const starX = (signDegree / 360) * 100;
+
+  // Y: max weight inverted (high = top of screen = low Y)
+  const maxWeight = Math.max(...significantTransits.map((t) => t.weight));
+  const normalizedWeight = Math.min(1, Math.max(0, maxWeight / 20));
+  const starY = 10 + (1 - normalizedWeight) * 75;
+
+  return {
+    starX: Math.round(starX * 100) / 100,
+    starY: Math.round(starY * 100) / 100,
   };
 }

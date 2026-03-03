@@ -7,7 +7,7 @@ import {
   findSignificantTransits,
   getRetrogradePlanets,
 } from "@/lib/astro-constants";
-import { computeDailyTheme } from "@/lib/sky-theme";
+import { computeDailyTheme, computeStarPosition } from "@/lib/sky-theme";
 import { generateSigil } from "@/lib/sigil";
 
 export async function GET() {
@@ -90,6 +90,12 @@ export async function GET() {
       })),
     };
 
+    // Compute star position for La Mappa
+    const { starX, starY } = computeStarPosition(
+      significantTransits,
+      currentTransits.map((t) => ({ planet: t.planet, sign: t.sign }))
+    );
+
     // Agent 2: Interprete — Haiku
     const interpretation = await generateInterpretation(transitData, {
       sunSign: profile.sunSign || undefined,
@@ -115,6 +121,8 @@ export async function GET() {
         interpretation: JSON.parse(JSON.stringify(masterResult)),
         dailyTheme: JSON.parse(JSON.stringify(theme)),
         sigilSvg,
+        starX,
+        starY,
       },
     });
 

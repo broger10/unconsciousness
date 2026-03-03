@@ -27,6 +27,7 @@ model User {
   pushSubscriptions PushSubscription[]
   mapInsights       MapInsight[]
   dailyTransits     DailyTransit[]
+  constellations    Constellation[]
   specchioCapitoli  SpecchioCapitolo[]
   specchioConsigli  SpecchioConsiglio[]
   createdAt     DateTime  @default(now())
@@ -122,6 +123,7 @@ model Profile {
   shadowMapNarrative String?  @db.Text
 
   onboardingComplete Boolean  @default(false)
+  mapOnboardingShown Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
@@ -273,6 +275,10 @@ model DailyTransit {
   interpretation Json     // {respiro, sussurro, seme}
   dailyTheme     Json     // {primary, secondary, accent HSL}
   sigilSvg       String   @db.Text
+  starX          Float?
+  starY          Float?
+  starUnlocked   Boolean  @default(false)
+  starUnlockedAt DateTime?
   createdAt      DateTime @default(now())
 
   @@unique([userId, date])
@@ -317,4 +323,19 @@ model SpecchioConsiglio {
   createdAt      DateTime @default(now())
 
   @@index([userId])
+}
+
+model Constellation {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  reading        String     @db.Text
+  dominantPlanet String
+  starDates      DateTime[] @db.Date
+  metadata       Json?
+  createdAt      DateTime   @default(now())
+
+  @@index([userId])
+  @@index([userId, dominantPlanet])
 }

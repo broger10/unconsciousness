@@ -473,9 +473,49 @@ body {
   animation: dot-active 2s ease-in-out infinite;
 }
 
+/* La Mappa — Star bloom animation */
+@keyframes star-bloom {
+  0% { transform: scale(1); opacity: 0.12; box-shadow: none; }
+  30% { transform: scale(1.4); opacity: 0.3; }
+  60% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px var(--star-color), 0 0 16px var(--star-color); }
+}
+.star-bloom { animation: star-bloom 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* La Mappa — Star breathing glow (after bloom) */
+@keyframes star-breathe {
+  0%, 100% { box-shadow: 0 0 4px var(--star-color), 0 0 8px var(--star-color); opacity: var(--star-brightness, 0.8); }
+  50% { box-shadow: 0 0 8px var(--star-color), 0 0 16px var(--star-color), 0 0 24px var(--star-color); opacity: 1; }
+}
+.star-breathe { animation: star-breathe 4s ease-in-out infinite; }
+
+/* La Mappa — Star tremble (nearby stars react to bloom) */
+@keyframes star-tremble {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(0.5px, -0.5px); }
+  40% { transform: translate(-0.5px, 0.5px); }
+  60% { transform: translate(0.5px, 0.3px); }
+  80% { transform: translate(-0.3px, -0.5px); }
+}
+.star-tremble { animation: star-tremble 0.8s ease-in-out; }
+
+/* La Mappa — Dim pre-placed star */
+.star-dim { opacity: 0.12; box-shadow: none; }
+
+/* La Mappa — Constellation line draw */
+@keyframes constellation-draw {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { stroke-dashoffset: 0; opacity: 0.3; }
+}
+.constellation-line {
+  stroke-dasharray: 100;
+  animation: constellation-draw 2s ease-out forwards;
+}
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active, .star-bloom, .star-breathe, .star-tremble, .constellation-line {
     animation: none !important;
   }
   .filo-toast-enter, .filo-fade-in {

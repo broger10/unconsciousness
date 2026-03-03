@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { generateStarInsight, generateConstellationInsight } from "@/lib/ai";
-import { findSignificantTransits, getCurrentLunarEvent } from "@/lib/astro-constants";
+import { computeStarPosition } from "@/lib/sky-theme";
+import { generateConstellationReading } from "@/lib/ai";
 
 function getToday(): Date {
   const d = new Date();
@@ -10,61 +10,24 @@ function getToday(): Date {
   return d;
 }
 
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+interface MapStar {
+  id: string;
+  date: string;
+  starX: number;
+  starY: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+  respiro: string;
+  seme: string;
+  dominantPlanet: string;
+  dominantPlanetSign: string;
+  transitDescription: string;
+  themeColor: string;
+  mood: number | null;
+  brightness: number;
+  specchioSlug: string | null;
 }
 
-function generateStarPosition(date: Date, userId: string): { x: number; y: number } {
-  const day = date.getDate();
-  const month = date.getMonth();
-  const seed = day * 31 + month * 367 + userId.charCodeAt(0) * 7;
-  return {
-    x: 15 + seededRandom(seed) * 70,       // 15-85% horizontal
-    y: 10 + seededRandom(seed + 1) * 70,   // 10-80% vertical
-  };
-}
-
-function buildNatalPlanets(profile: {
-  sunSign?: string | null;
-  moonSign?: string | null;
-  risingSign?: string | null;
-  mercurySign?: string | null;
-  venusSign?: string | null;
-  marsSign?: string | null;
-  jupiterSign?: string | null;
-  saturnSign?: string | null;
-  chironSign?: string | null;
-}): Array<{ name: string; sign: string }> {
-  const planets: Array<{ name: string; sign: string }> = [];
-  if (profile.sunSign) planets.push({ name: "Sole", sign: profile.sunSign });
-  if (profile.moonSign) planets.push({ name: "Luna", sign: profile.moonSign });
-  if (profile.risingSign) planets.push({ name: "Ascendente", sign: profile.risingSign });
-  if (profile.mercurySign) planets.push({ name: "Mercurio", sign: profile.mercurySign });
-  if (profile.venusSign) planets.push({ name: "Venere", sign: profile.venusSign });
-  if (profile.marsSign) planets.push({ name: "Marte", sign: profile.marsSign });
-  if (profile.jupiterSign) planets.push({ name: "Giove", sign: profile.jupiterSign });
-  if (profile.saturnSign) planets.push({ name: "Saturno", sign: profile.saturnSign });
-  if (profile.chironSign) planets.push({ name: "Chirone", sign: profile.chironSign });
-  return planets;
-}
-
-function chooseCategory(
-  lunarEvent: ReturnType<typeof getCurrentLunarEvent>,
-  transits: Array<{ description: string }>,
-  recentMoods: number[]
-): string {
-  if (lunarEvent) return "lunar";
-  if (transits.length > 0) return "transit";
-  if (recentMoods.length >= 3) {
-    const avg = recentMoods.slice(-3).reduce((a, b) => a + b, 0) / Math.min(recentMoods.length, 3);
-    if (avg <= 2.5) return "shadow";
-    if (avg >= 4) return "growth";
-  }
-  return "mirror";
-}
-
-// GET: fetch today's star + history
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -73,174 +36,177 @@ export async function GET(request: NextRequest) {
 
   const userId = session.user.id;
 
-  // Quick unread check mode
+  // Quick unread check (for bottom tab badge)
   const check = request.nextUrl.searchParams.get("check");
   if (check === "unread") {
-    const unread = await db.mapInsight.count({
-      where: { userId, read: false, type: "star" },
+    const today = getToday();
+    const todayTransit = await db.dailyTransit.findUnique({
+      where: { userId_date: { userId, date: today } },
+      select: { starUnlocked: true },
     });
+    const unread = todayTransit && !todayTransit.starUnlocked ? 1 : 0;
     return NextResponse.json({ unread });
   }
 
-  const profile = await db.profile.findUnique({
-    where: { userId },
-  });
-
-  if (!profile?.onboardingComplete) {
-    return NextResponse.json({ today: null, stars: [], constellations: [] });
-  }
-
-  const today = getToday();
-
-  // Check if today's star already exists
-  let todayStar = await db.mapInsight.findUnique({
-    where: { userId_date_type: { userId, date: today, type: "star" } },
-  });
-
-  // Generate if needed
-  if (!todayStar) {
-    // Gather context data
-    const [recentCheckins, recentJournals] = await Promise.all([
+  const [profile, allTransits, allCheckins, constellations, specchioCapitoli] =
+    await Promise.all([
+      db.profile.findUnique({
+        where: { userId },
+        select: {
+          onboardingComplete: true,
+          mapOnboardingShown: true,
+          sunSign: true,
+          moonSign: true,
+        },
+      }),
+      db.dailyTransit.findMany({
+        where: { userId },
+        orderBy: { date: "asc" },
+        select: {
+          id: true,
+          date: true,
+          starX: true,
+          starY: true,
+          starUnlocked: true,
+          starUnlockedAt: true,
+          transitData: true,
+          interpretation: true,
+          dailyTheme: true,
+        },
+      }),
       db.dailyCheckin.findMany({
         where: { userId },
+        select: { mood: true, createdAt: true },
         orderBy: { createdAt: "desc" },
-        take: 7,
-        select: { mood: true, energy: true },
       }),
-      db.journal.findMany({
+      db.constellation.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
-        take: 3,
-        select: { themes: true, mood: true },
+      }),
+      db.specchioCapitolo.findMany({
+        where: { userId, completedAt: { not: null } },
+        select: { slug: true, startedAt: true, completedAt: true },
       }),
     ]);
 
-    const natalPlanets = buildNatalPlanets(profile);
-    const transits = findSignificantTransits(natalPlanets);
-    const lunarEvent = getCurrentLunarEvent();
-    const recentMoods = recentCheckins.map((c) => c.mood);
-    const recentThemes = recentJournals.flatMap((j) => j.themes || []);
-
-    const category = chooseCategory(lunarEvent, transits, recentMoods);
-    const position = generateStarPosition(today, userId);
-
-    try {
-      const content = await generateStarInsight({
-        category,
-        profile: {
-          sunSign: profile.sunSign || undefined,
-          moonSign: profile.moonSign || undefined,
-          risingSign: profile.risingSign || undefined,
-          shadows: profile.shadows,
-          blindSpots: profile.blindSpots,
-          strengths: profile.strengths,
-          northNodeSign: profile.northNodeSign || undefined,
-        },
-        transits: transits.map((t) => ({ description: t.description })),
-        recentMoods,
-        recentThemes,
-        lunarEvent,
-      });
-
-      todayStar = await db.mapInsight.create({
-        data: {
-          userId,
-          date: today,
-          type: "star",
-          content,
-          category,
-          metadata: {
-            x: position.x,
-            y: position.y,
-            brightness: category === "lunar" ? 1.0 : 0.6 + Math.random() * 0.3,
-          },
-        },
-      });
-    } catch (e) {
-      console.error("Failed to generate star insight:", e);
-      // Fallback: create a star without AI
-      todayStar = await db.mapInsight.create({
-        data: {
-          userId,
-          date: today,
-          type: "star",
-          content: "Il cielo si muove, anche quando non lo vedi.",
-          category: "mirror",
-          metadata: { x: position.x, y: position.y, brightness: 0.5 },
-        },
-      });
-    }
-  }
-
-  // Check for weekly constellation (Sunday)
-  const dayOfWeek = new Date().getDay();
-  if (dayOfWeek === 0) {
-    const weekStart = new Date(today);
-    weekStart.setDate(weekStart.getDate() - 6);
-
-    const existingConstellation = await db.mapInsight.findUnique({
-      where: { userId_date_type: { userId, date: today, type: "constellation" } },
+  if (!profile?.onboardingComplete) {
+    return NextResponse.json({
+      stars: [],
+      constellations: [],
+      showOnboarding: false,
+      todayStarId: null,
     });
+  }
 
-    if (!existingConstellation) {
-      const weekStars = await db.mapInsight.findMany({
-        where: {
-          userId,
-          type: "star",
-          date: { gte: weekStart, lte: today },
-        },
-        orderBy: { date: "asc" },
-      });
+  // Build mood lookup by date
+  const moodByDate = new Map<string, number>();
+  for (const c of allCheckins) {
+    const dateKey = new Date(c.createdAt).toISOString().split("T")[0];
+    if (!moodByDate.has(dateKey)) moodByDate.set(dateKey, c.mood);
+  }
 
-      if (weekStars.length >= 5) {
-        try {
-          const result = await generateConstellationInsight({
-            stars: weekStars.map((s) => ({ content: s.content, category: s.category })),
-            profile: {
-              sunSign: profile.sunSign || undefined,
-              moonSign: profile.moonSign || undefined,
-            },
-          });
+  // Unlock today's star if not yet unlocked
+  const today = getToday();
+  const todayIso = today.toISOString().split("T")[0];
+  const todayTransit = allTransits.find(
+    (t) => new Date(t.date).toISOString().split("T")[0] === todayIso
+  );
 
-          await db.mapInsight.create({
-            data: {
-              userId,
-              date: today,
-              type: "constellation",
-              content: result.insight,
-              category: "growth",
-              metadata: {
-                name: result.name,
-                starIds: weekStars.map((s) => s.id),
-              },
-            },
-          });
-        } catch (e) {
-          console.error("Failed to generate constellation:", e);
-        }
-      }
+  if (todayTransit && !todayTransit.starUnlocked) {
+    await db.dailyTransit.update({
+      where: { id: todayTransit.id },
+      data: { starUnlocked: true, starUnlockedAt: new Date() },
+    });
+    todayTransit.starUnlocked = true;
+    todayTransit.starUnlockedAt = new Date();
+  }
+
+  // Also unlock any past stars that were never unlocked (missed days)
+  const unlockedPast = allTransits.filter(
+    (t) => !t.starUnlocked && new Date(t.date) < today
+  );
+  if (unlockedPast.length > 0) {
+    await db.dailyTransit.updateMany({
+      where: { id: { in: unlockedPast.map((t) => t.id) } },
+      data: { starUnlocked: true, starUnlockedAt: new Date() },
+    });
+    for (const t of unlockedPast) {
+      t.starUnlocked = true;
     }
   }
 
-  // Fetch history (last 28 days)
-  const historyStart = new Date(today);
-  historyStart.setDate(historyStart.getDate() - 28);
+  // Map transits to star data
+  const stars: MapStar[] = allTransits.map((t) => {
+    const td = t.transitData as {
+      transits: Array<{
+        transitPlanet: string;
+        aspect: string;
+        natalPlanet: string;
+        description: string;
+        weight: number;
+      }>;
+      currentPositions?: Array<{ planet: string; sign: string }>;
+    };
+    const interp = t.interpretation as { respiro: string; sussurro: string; seme: string };
+    const theme = t.dailyTheme as { primary: string; secondary: string; accent: string };
+    const dateStr = new Date(t.date).toISOString().split("T")[0];
+    const mood = moodByDate.get(dateStr) ?? null;
+    const brightness = mood ? 0.1 + (mood / 5) * 0.9 : 0.5;
 
-  const [stars, constellations] = await Promise.all([
-    db.mapInsight.findMany({
-      where: { userId, type: "star", date: { gte: historyStart } },
-      orderBy: { date: "desc" },
-    }),
-    db.mapInsight.findMany({
-      where: { userId, type: "constellation", date: { gte: historyStart } },
-      orderBy: { date: "desc" },
-    }),
-  ]);
+    const dominant = td.transits?.[0];
+    const dominantPlanet = dominant?.transitPlanet ?? "Sole";
+    const dominantPlanetSign =
+      td.currentPositions?.find((p) => p.planet === dominantPlanet)?.sign ?? "";
 
-  return NextResponse.json({ today: todayStar, stars, constellations });
+    // Compute starX/starY if missing (backfill for old records)
+    let starX = t.starX;
+    let starY = t.starY;
+    if (starX == null || starY == null) {
+      const positions = td.currentPositions ?? [];
+      const computed = computeStarPosition(td.transits ?? [], positions);
+      starX = computed.starX;
+      starY = computed.starY;
+    }
+
+    // Find Specchio connection if transit date overlaps a chapter
+    const specchioSlug = specchioCapitoli.find((cap) => {
+      const d = new Date(t.date);
+      return d >= new Date(cap.startedAt) && cap.completedAt && d <= new Date(cap.completedAt);
+    })?.slug ?? null;
+
+    return {
+      id: t.id,
+      date: dateStr,
+      starX,
+      starY,
+      unlocked: t.starUnlocked,
+      unlockedAt: t.starUnlockedAt?.toISOString() ?? null,
+      respiro: interp.respiro,
+      seme: interp.seme,
+      dominantPlanet,
+      dominantPlanetSign,
+      transitDescription: dominant?.description ?? "",
+      themeColor: theme.primary,
+      mood,
+      brightness,
+      specchioSlug,
+    };
+  });
+
+  // Check constellation trigger after unlock
+  if (todayTransit?.starUnlocked) {
+    await checkConstellationTrigger(userId, stars, profile);
+  }
+
+  return NextResponse.json({
+    stars,
+    constellations,
+    showOnboarding: !profile.mapOnboardingShown,
+    todayStarId: todayTransit?.id ?? null,
+  });
 }
 
-// PATCH: mark star as read
+// PATCH: mark onboarding as shown
 export async function PATCH(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -248,16 +214,124 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { insightId } = body;
 
-  if (!insightId) {
-    return NextResponse.json({ error: "insightId richiesto" }, { status: 400 });
+  if (body.action === "onboardingShown") {
+    await db.profile.update({
+      where: { userId: session.user.id },
+      data: { mapOnboardingShown: true },
+    });
+    return NextResponse.json({ ok: true });
   }
 
-  await db.mapInsight.updateMany({
-    where: { id: insightId, userId: session.user.id },
-    data: { read: true },
-  });
+  return NextResponse.json({ error: "Azione non valida" }, { status: 400 });
+}
 
-  return NextResponse.json({ ok: true });
+// ─── Constellation trigger ───
+
+async function checkConstellationTrigger(
+  userId: string,
+  stars: MapStar[],
+  profile: { sunSign: string | null; moonSign: string | null }
+) {
+  const unlockedStars = stars.filter((s) => s.unlocked);
+
+  // Group by dominantPlanet
+  const byPlanet = new Map<string, MapStar[]>();
+  for (const s of unlockedStars) {
+    const group = byPlanet.get(s.dominantPlanet) || [];
+    group.push(s);
+    byPlanet.set(s.dominantPlanet, group);
+  }
+
+  for (const [planet, planetStars] of byPlanet) {
+    if (planetStars.length < 5) continue;
+
+    // Check if constellation already exists for this planet
+    const existing = await db.constellation.findFirst({
+      where: { userId, dominantPlanet: planet },
+    });
+
+    // Only create if first time (5+) or every 5 additional stars
+    if (existing) {
+      const existingCount = existing.starDates.length;
+      if (planetStars.length < existingCount + 5) continue;
+    }
+
+    // Find clusters (stars within ~30% range)
+    const clusters = findClusters(planetStars, 30);
+    for (const cluster of clusters) {
+      if (cluster.length < 5) continue;
+
+      // Check this cluster hasn't been made into a constellation already
+      const clusterDates = cluster.map((s) => new Date(s.date));
+
+      try {
+        const reading = await generateConstellationReading({
+          stars: cluster.map((s) => ({
+            date: s.date,
+            respiro: s.respiro,
+            dominantPlanet: s.dominantPlanet,
+            transitDescription: s.transitDescription,
+            mood: s.mood,
+            specchioSlug: s.specchioSlug,
+          })),
+          planet,
+          profile: {
+            sunSign: profile.sunSign ?? undefined,
+            moonSign: profile.moonSign ?? undefined,
+          },
+          userId,
+        });
+
+        await db.constellation.create({
+          data: {
+            userId,
+            name: reading.name,
+            reading: reading.reading,
+            dominantPlanet: planet,
+            starDates: clusterDates,
+            metadata: JSON.parse(JSON.stringify({
+              cartografoAnalysis: reading.analysis,
+              centerX: average(cluster.map((s) => s.starX)),
+              centerY: average(cluster.map((s) => s.starY)),
+            })),
+          },
+        });
+      } catch (e) {
+        console.error("Constellation generation failed:", e);
+      }
+    }
+  }
+}
+
+function findClusters(stars: MapStar[], maxRange: number): MapStar[][] {
+  const used = new Set<string>();
+  const clusters: MapStar[][] = [];
+
+  for (const star of stars) {
+    if (used.has(star.id)) continue;
+    const cluster = [star];
+    used.add(star.id);
+
+    for (const other of stars) {
+      if (used.has(other.id)) continue;
+      const isClose = cluster.some(
+        (s) =>
+          Math.abs(s.starX - other.starX) < maxRange &&
+          Math.abs(s.starY - other.starY) < maxRange
+      );
+      if (isClose) {
+        cluster.push(other);
+        used.add(other.id);
+      }
+    }
+
+    clusters.push(cluster);
+  }
+
+  return clusters;
+}
+
+function average(nums: number[]): number {
+  return nums.length === 0 ? 50 : nums.reduce((a, b) => a + b, 0) / nums.length;
 }

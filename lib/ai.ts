@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { db } from "./db";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -799,90 +800,161 @@ export async function generateFirstRevealPhrase(
 }
 
 // ============================================
-// MAP — Il Cielo Interiore (Daily Star Insights)
+// LA MAPPA — Two-Agent Constellation Pipeline
 // ============================================
 
-export async function generateStarInsight(context: {
-  category: string;
-  profile: {
-    sunSign?: string;
-    moonSign?: string;
-    risingSign?: string;
-    shadows?: string[];
-    blindSpots?: string[];
-    strengths?: string[];
-    northNodeSign?: string;
-  };
-  transits: Array<{ description: string }>;
-  recentMoods: number[];
-  recentThemes: string[];
-  lunarEvent: { phase: string; sign: string } | null;
+/**
+ * Agent 1: Il Cartografo — analyzes the star sequence for psychological pattern.
+ */
+async function analyzeConstellationPattern(context: {
+  stars: Array<{
+    date: string;
+    respiro: string;
+    dominantPlanet: string;
+    transitDescription: string;
+    mood: number | null;
+  }>;
+  planet: string;
+  profile: { sunSign?: string; moonSign?: string };
+  specchioContext?: string;
 }): Promise<string> {
-  const categoryPrompts: Record<string, string> = {
-    transit: `Genera un micro-insight basato sul transito astrale più significativo di oggi per questa persona. Spiega cosa significa per LEI specificamente, non in generale.`,
-    shadow: `Genera un micro-insight sull'ombra che si sta attivando in questo periodo. Il mood recente è basso — non consolare, ma illumina cosa sta succedendo sotto la superficie.`,
-    mirror: `Genera un micro-insight di riflessione personale. Qualcosa che questa persona dovrebbe notare di sé oggi, basato sul suo tema natale e i pattern recenti.`,
-    growth: `Genera un micro-insight sulla crescita in corso. Il mood recente è alto — evidenzia cosa sta funzionando e dove sta andando questa energia.`,
-    lunar: `Genera un micro-insight legato alla fase lunare corrente (${context.lunarEvent?.phase === "new_moon" ? "Luna Nuova" : "Luna Piena"} in ${context.lunarEvent?.sign}). Cosa significa per questa persona specifica.`,
-  };
-
   const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 150,
-    system: `${TONE}Sei la voce del cielo interiore. Scrivi UN micro-insight di 1-2 frasi.
-Deve essere radicalmente specifico per questa persona. Niente frasi generiche.
-Non iniziare con "Oggi" — varia gli incipit. Non usare domande retoriche come incipit.
-${categoryPrompts[context.category] || categoryPrompts.mirror}`,
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 400,
+    system: `${TONE}Sei Il Cartografo. Analizzi sequenze di transiti astrologici per trovare il pattern psicologico nascosto.
+
+Ti vengono date le stelle (transiti) di una persona legate a ${context.planet}. Ogni stella porta una frase (Il Respiro) e un contesto.
+
+Il tuo compito:
+- Identifica il FILO CONDUTTORE psicologico tra queste stelle
+- Nota come il mood cambia in relazione al pianeta dominante
+- Trova la TENSIONE o il TEMA che unifica questa costellazione
+- Scrivi un'analisi di 3-4 frasi in prima persona del narratore, come se stessi annotando su un quaderno
+- Non essere generico. Sii chirurgico
+
+Rispondi SOLO con l'analisi, niente JSON, niente titoli.`,
     messages: [
       {
         role: "user",
-        content: `Tema natale: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}, Asc. ${context.profile.risingSign}
-Nodo Nord: ${context.profile.northNodeSign || "N/A"}
-Ombre: ${context.profile.shadows?.slice(0, 2).join(", ") || "N/A"}
-Punti ciechi: ${context.profile.blindSpots?.slice(0, 2).join(", ") || "N/A"}
-Punti di forza: ${context.profile.strengths?.slice(0, 2).join(", ") || "N/A"}
-Transiti attivi: ${context.transits.map((t) => t.description).join("; ") || "Nessun transito significativo"}
-Mood ultimi giorni (1-5): ${context.recentMoods.join(", ") || "Nessun dato"}
-Temi recenti dal diario: ${context.recentThemes.join(", ") || "Nessun dato"}
-${context.lunarEvent ? `Fase lunare: ${context.lunarEvent.phase === "new_moon" ? "Luna Nuova" : "Luna Piena"} in ${context.lunarEvent.sign}` : ""}
+        content: `Persona: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}
+Pianeta dominante della costellazione: ${context.planet}
 
-Genera il micro-insight.`,
+Stelle in ordine cronologico:
+${context.stars
+  .map(
+    (s, i) =>
+      `${i + 1}. [${s.date}] Respiro: "${s.respiro}" — Transito: ${s.transitDescription} — Mood: ${s.mood ?? "N/D"}`
+  )
+  .join("\n")}
+
+${context.specchioContext ? `\nContesto dallo Specchio (percorso di auto-conoscenza):\n${context.specchioContext}` : ""}
+
+Analizza il pattern.`,
       },
     ],
   });
   return (message.content[0] as { type: "text"; text: string }).text.trim();
 }
 
-export async function generateConstellationInsight(context: {
-  stars: Array<{ content: string; category: string }>;
+/**
+ * Agent 2: Il Narratore — takes the Cartografo's analysis and generates name + poetic reading.
+ */
+async function generateConstellationNarrative(context: {
+  analysis: string;
+  planet: string;
+  starCount: number;
   profile: { sunSign?: string; moonSign?: string };
-}): Promise<{ name: string; insight: string }> {
+}): Promise<{ name: string; reading: string }> {
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 300,
-    system: `${TONE}Sei la voce del cielo interiore. Ti vengono date le stelle (micro-insight) della settimana appena trascorsa.
-Devi creare una COSTELLAZIONE: un nome evocativo (2-3 parole, es: "La Pazienza Feroce", "Il Fuoco Quieto") e una sintesi di 2-3 frasi che colleghi i temi della settimana in un unico filo narrativo.
-Rispondi SOLO con JSON valido: {"name": "...", "insight": "..."}`,
+    system: `${TONE}Sei Il Narratore. Ricevi l'analisi del Cartografo e la trasformi in poesia.
+
+Devi creare:
+1. Un NOME per la costellazione: 2-3 parole evocative (es: "La Pazienza Feroce", "Il Fuoco Quieto", "L'Ombra che Canta")
+2. Una LETTURA di esattamente 6 righe. Tono: tra hasidismo e buddhismo. Ogni riga deve essere una frase completa. Non usare rime. Usa la seconda persona singolare.
+
+La lettura deve suonare come un testo sacro personale, non come un oroscopo.
+
+Rispondi SOLO con JSON valido: {"name": "...", "reading": "..."}
+Le 6 righe della lettura separate da \\n.`,
     messages: [
       {
         role: "user",
         content: `Persona: Sole ${context.profile.sunSign}, Luna ${context.profile.moonSign}
+Pianeta della costellazione: ${context.planet}
+Numero di stelle: ${context.starCount}
 
-Stelle della settimana:
-${context.stars.map((s, i) => `${i + 1}. [${s.category}] ${s.content}`).join("\n")}
+Analisi del Cartografo:
+"${context.analysis}"
 
-Genera la costellazione.`,
+Genera nome e lettura.`,
       },
     ],
   });
+
   const text = (message.content[0] as { type: "text"; text: string }).text;
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return { name: "Costellazione Senza Nome", insight: text };
+  if (!jsonMatch) {
+    return { name: "Costellazione Senza Nome", reading: text };
+  }
   try {
     return JSON.parse(jsonMatch[0]);
   } catch {
-    return { name: "Costellazione Senza Nome", insight: text };
+    return { name: "Costellazione Senza Nome", reading: text };
   }
+}
+
+/**
+ * Main constellation pipeline — orchestrates Il Cartografo + Il Narratore.
+ */
+export async function generateConstellationReading(context: {
+  stars: Array<{
+    date: string;
+    respiro: string;
+    dominantPlanet: string;
+    transitDescription: string;
+    mood: number | null;
+    specchioSlug: string | null;
+  }>;
+  planet: string;
+  profile: { sunSign?: string; moonSign?: string };
+  userId: string;
+}): Promise<{ name: string; reading: string; analysis: string }> {
+  // Gather Specchio context if stars have Specchio connections
+  let specchioContext = "";
+  const specchioSlugs = [...new Set(context.stars.map((s) => s.specchioSlug).filter(Boolean))];
+  if (specchioSlugs.length > 0) {
+    const capitoli = await db.specchioCapitolo.findMany({
+      where: { userId: context.userId, slug: { in: specchioSlugs as string[] } },
+      select: { slug: true, ritratto: true, ritrattoInsights: true },
+    });
+    specchioContext = capitoli
+      .map((c) => `Capitolo "${c.slug}": ${c.ritrattoInsights?.join("; ") ?? c.ritratto ?? ""}`)
+      .join("\n");
+  }
+
+  // Agent 1: Il Cartografo
+  const analysis = await analyzeConstellationPattern({
+    stars: context.stars,
+    planet: context.planet,
+    profile: context.profile,
+    specchioContext,
+  });
+
+  // Agent 2: Il Narratore
+  const narrative = await generateConstellationNarrative({
+    analysis,
+    planet: context.planet,
+    starCount: context.stars.length,
+    profile: context.profile,
+  });
+
+  return {
+    name: narrative.name,
+    reading: narrative.reading,
+    analysis,
+  };
 }
 
 // ============================================
