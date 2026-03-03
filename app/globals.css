@@ -527,10 +527,85 @@ body {
   animation: filo-selected-glow 2s ease-in-out infinite;
 }
 
+/* Lo Specchio v2 — Black river */
+.specchio-bg {
+  background: linear-gradient(180deg, #000 0%, #050505 30%, #0a0a0a 60%, #080808 100%);
+  background-size: 100% 300%;
+}
+.specchio-bg[data-warmth="cool"] {
+  background: linear-gradient(180deg, #020100 0%, #060503 30%, #0b0905 60%, #090703 100%);
+  background-size: 100% 300%;
+}
+.specchio-bg[data-warmth="neutral"] {
+  background: linear-gradient(180deg, #040200 0%, #080604 30%, #0d0a06 60%, #0b0804 100%);
+  background-size: 100% 300%;
+}
+.specchio-bg[data-warmth="warm"] {
+  background: linear-gradient(180deg, #060300 0%, #0a0805 30%, #0f0c08 60%, #0d0a06 100%);
+  background-size: 100% 300%;
+}
+.specchio-bg[data-warmth="deep"] {
+  background: linear-gradient(180deg, #080400 0%, #0d0a06 30%, #120e09 60%, #100c07 100%);
+  background-size: 100% 300%;
+}
+
+/* Gradient flow */
+@keyframes specchio-flow {
+  0% { background-position: 50% 0%; }
+  100% { background-position: 50% 100%; }
+}
+.specchio-flowing { animation: specchio-flow 8s linear infinite; }
+.specchio-slowing { animation: specchio-flow 20s linear infinite; }
+
+/* Water surface line */
+@keyframes specchio-ripple {
+  0% { transform: scaleX(0); opacity: 0; }
+  60% { transform: scaleX(1.05); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.6; }
+}
+@keyframes specchio-pulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(1); }
+  50% { opacity: 0.7; transform: scaleY(2); }
+}
+.specchio-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212,184,122,0.3) 20%, rgba(212,184,122,0.6) 50%, rgba(212,184,122,0.3) 80%, transparent 100%);
+  animation: specchio-ripple 1.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+.specchio-line-pulse { animation: specchio-pulse 0.8s ease-in-out; }
+
+/* Word reveal (slower than Il Cielo) */
+@keyframes specchio-word-reveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.specchio-word-reveal { animation: specchio-word-reveal 0.6s ease-out forwards; opacity: 0; }
+
+/* Answer sink + glow */
+@keyframes specchio-sink {
+  to { opacity: 0; transform: translateY(20px); }
+}
+.specchio-sink { animation: specchio-sink 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes specchio-glow {
+  0% { text-shadow: none; }
+  100% { text-shadow: 0 0 12px rgba(212,184,122,0.4); }
+}
+.specchio-chosen { animation: specchio-glow 0.4s ease-out forwards; }
+
+/* End message */
+@keyframes specchio-end {
+  from { opacity: 0; letter-spacing: 0.3em; }
+  to { opacity: 0.6; letter-spacing: 0.15em; }
+}
+.specchio-end-text { animation: specchio-end 2s cubic-bezier(0.16,1,0.3,1) forwards; }
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active, .star-bloom, .star-breathe, .star-tremble, .constellation-line, .filo-selected-glow {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active, .star-bloom, .star-breathe, .star-tremble, .constellation-line, .filo-selected-glow, .specchio-flowing, .specchio-slowing, .specchio-line, .specchio-line-pulse, .specchio-word-reveal, .specchio-sink, .specchio-chosen, .specchio-end-text {
     animation: none !important;
+  }
+  .specchio-word-reveal {
+    opacity: 1 !important;
   }
   .filo-toast-enter, .filo-fade-in {
     animation: none !important;

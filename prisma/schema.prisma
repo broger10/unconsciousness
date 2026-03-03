@@ -31,6 +31,7 @@ model User {
   specchioCapitoli  SpecchioCapitolo[]
   specchioConsigli  SpecchioConsiglio[]
   filoSessions      FiloSession[]
+  mirrorSessions    MirrorSession[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -354,4 +355,40 @@ model FiloSession {
   createdAt   DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum MirrorStatus {
+  IN_PROGRESS
+  COMPLETE
+}
+
+model MirrorSession {
+  id        String        @id @default(cuid())
+  userId    String
+  date      DateTime      @db.Date
+  status    MirrorStatus  @default(IN_PROGRESS)
+  depth     Int           @default(1)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  answers   MirrorAnswer[]
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model MirrorAnswer {
+  id           String        @id @default(cuid())
+  sessionId    String
+  depth        Int
+  question     String        @db.Text
+  options      Json
+  answerChosen String?
+  answerFree   String?       @db.Text
+  reflection   String?       @db.Text
+  astroContext String        @db.Text
+  createdAt    DateTime      @default(now())
+  session      MirrorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }

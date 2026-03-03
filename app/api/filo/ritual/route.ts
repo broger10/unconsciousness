@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch all context in parallel
-  const [user, profile, dailyTransit, specchioCapitoli] = await Promise.all([
+  const [user, profile, dailyTransit, specchioCapitoli, mirrorAnswers] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: { name: true },
@@ -89,6 +89,12 @@ export async function POST(request: NextRequest) {
       where: { userId, completedAt: { not: null } },
       select: { slug: true, ritrattoInsights: true, ritratto: true },
       orderBy: { completedAt: "desc" },
+    }),
+    db.mirrorAnswer.findMany({
+      where: { session: { userId }, OR: [{ answerChosen: { not: null } }, { answerFree: { not: null } }] },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { question: true, answerChosen: true, answerFree: true, reflection: true, depth: true },
     }),
   ]);
 
@@ -131,6 +137,14 @@ export async function POST(request: NextRequest) {
       specchioInsights.push(`[${cap.slug}] ${cap.ritrattoInsights.join("; ")}`);
     } else if (cap.ritratto) {
       specchioInsights.push(`[${cap.slug}] ${cap.ritratto.slice(0, 200)}`);
+    }
+  }
+
+  // Append Mirror answers to Specchio insights
+  for (const ma of mirrorAnswers) {
+    const answer = ma.answerFree || ma.answerChosen || "";
+    if (answer) {
+      specchioInsights.push(`[specchio] D: ${ma.question} R: ${answer}${ma.reflection ? ` | ${ma.reflection}` : ""}`);
     }
   }
 

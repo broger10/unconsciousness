@@ -934,6 +934,20 @@ export async function generateConstellationReading(context: {
       .join("\n");
   }
 
+  // Also gather Mirror context (recent deep answers)
+  const mirrorAnswers = await db.mirrorAnswer.findMany({
+    where: { session: { userId: context.userId }, OR: [{ answerChosen: { not: null } }, { answerFree: { not: null } }] },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: { question: true, answerChosen: true, answerFree: true, reflection: true },
+  });
+  if (mirrorAnswers.length > 0) {
+    const mirrorCtx = mirrorAnswers
+      .map((ma) => `D: ${ma.question} R: ${ma.answerFree || ma.answerChosen || ""}`)
+      .join("\n");
+    specchioContext += `${specchioContext ? "\n" : ""}Dallo Specchio (risposte recenti):\n${mirrorCtx}`;
+  }
+
   // Agent 1: Il Cartografo
   const analysis = await analyzeConstellationPattern({
     stars: context.stars,
@@ -1323,4 +1337,168 @@ Raffina in tre momenti perfetti.`,
     sussurro: parsed.sussurro || interpretation.sussurro,
     seme: parsed.seme || interpretation.seme,
   };
+}
+
+// ============================================
+// LO SPECCHIO v2 — Mirror Ritual (Daily Descent)
+// ============================================
+
+export async function generateMirrorQuestion(context: {
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    mercurySign?: string;
+    venusSign?: string;
+    marsSign?: string;
+    jupiterSign?: string;
+    saturnSign?: string;
+    shadows?: string[];
+    strengths?: string[];
+    blindSpots?: string[];
+  };
+  slowTransits: Array<{ planet: string; sign: string }>;
+  previousAnswers: Array<{
+    date: string;
+    depth: number;
+    question: string;
+    answerChosen?: string | null;
+    answerFree?: string | null;
+  }>;
+  userName?: string;
+}): Promise<{
+  question: string;
+  options: { opening: string; resistance: string; uncertainty: string };
+  astrologicalContext: string;
+}> {
+  const last14Days = context.previousAnswers.filter((a) => {
+    const d = new Date(a.date);
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    return d >= twoWeeksAgo;
+  });
+
+  const recentQuestions = last14Days.map((a) => a.question);
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 600,
+    system: `${TONE}Sei Il Generatore dello Specchio. Generi una domanda al giorno per un rituale di auto-conoscenza profonda.
+
+REGOLE FONDAMENTALI:
+- La domanda è in linguaggio umano puro. L'astrologia è completamente invisibile. Niente segni, niente pianeti, niente transiti nel testo della domanda
+- Deve sembrare scritta da qualcuno che conosce questa persona da anni — non da un algoritmo
+- NON ripetere mai una domanda o un tema simile già fatto negli ultimi 14 giorni
+- Max 15 parole per la domanda. Seconda persona singolare
+- Tre opzioni di risposta — tre posture interiori genuinamente diverse:
+  1. opening: l'utente ammette qualcosa, si apre
+  2. resistance: l'utente si difende, nega, minimizza
+  3. uncertainty: l'utente non sa ancora, resta nell'incerto
+- Ogni opzione: max 20 parole, onesta, nessuna chiaramente "giusta"
+- astrologicalContext: un appunto interno (non mostrato all'utente) che spiega quale ciclo lento ha guidato la scelta della domanda
+
+PAROLE VIETATE: universo, energia, vibrazioni, manifestare, allineare, frequenza, risonanza, abbondanza, positività
+PAROLE PREFERITE: fame, radice, ombra, specchio, soglia, silenzio, peso, nudità, verità, corpo, terra, notte, luce cruda
+
+Rispondi SOLO con JSON valido:
+{"question": "...", "options": {"opening": "...", "resistance": "...", "uncertainty": "..."}, "astrologicalContext": "..."}`,
+    messages: [
+      {
+        role: "user",
+        content: `${context.userName ? `Nome: ${context.userName}` : ""}
+Tema natale: Sole ${context.profile.sunSign || "?"}, Luna ${context.profile.moonSign || "?"}, Asc. ${context.profile.risingSign || "?"}
+Mercurio ${context.profile.mercurySign || "?"}, Venere ${context.profile.venusSign || "?"}, Marte ${context.profile.marsSign || "?"}
+Giove ${context.profile.jupiterSign || "?"}, Saturno ${context.profile.saturnSign || "?"}
+Ombre: ${context.profile.shadows?.join(", ") || "N/A"}
+Forze: ${context.profile.strengths?.join(", ") || "N/A"}
+Punti ciechi: ${context.profile.blindSpots?.join(", ") || "N/A"}
+
+Transiti lenti attivi: ${context.slowTransits.map((t) => `${t.planet} in ${t.sign}`).join(", ") || "N/A"}
+
+${recentQuestions.length > 0 ? `Domande degli ultimi 14 giorni (NON ripetere temi simili):\n${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}` : "Prima domanda in assoluto per questa persona."}
+
+${context.previousAnswers.length > 0 ? `Ultime risposte (per conoscere la persona):\n${context.previousAnswers.slice(0, 10).map((a) => `D: ${a.question} → R: ${a.answerFree || a.answerChosen || "?"}`).join("\n")}` : ""}
+
+Genera la domanda di oggi.`,
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Failed to parse mirror question JSON");
+  return JSON.parse(jsonMatch[0]);
+}
+
+export async function generateMirrorDescent(context: {
+  currentQuestion: string;
+  currentAnswer: string;
+  astroContext: string;
+  currentDepth: number;
+  sessionAnswers: Array<{ depth: number; question: string; answer: string }>;
+  recentAnswers: Array<{ date: string; question: string; answer: string }>;
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+    strengths?: string[];
+  };
+}): Promise<{
+  reflection: string;
+  nextQuestion: string | null;
+  nextOptions: { opening: string; resistance: string; uncertainty: string } | null;
+  shouldContinue: boolean;
+  depth: number;
+}> {
+  const maxDepth = 3;
+  const forceStop = context.currentDepth >= maxDepth;
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 500,
+    system: `${TONE}Sei Il Discesore dello Specchio. Dopo ogni risposta dell'utente, offri un rispecchiamento e poi una domanda più profonda.
+
+IL RISPECCHIAMENTO:
+- Una frase sola, breve. Vede la persona. Non giudica, non consiglia, non celebra, non consola
+- Dice "ti ho sentito" in modo profondo — riconosce ciò che la risposta rivela senza spiegarlo
+- Non iniziare con "Capisco", "Sento che", "È interessante"
+
+LA DOMANDA SUCCESSIVA:
+- Nasce direttamente dalla risposta appena data — scende nel punto esatto che la risposta ha aperto
+- Più profonda della precedente. Non ripete, non riformula — scava
+- Stesse tre posture: opening (si apre), resistance (si difende), uncertainty (non sa)
+- Ogni opzione: max 20 parole
+
+${forceStop ? "IMPORTANTE: Siamo al livello massimo di profondità. NON generare una nuova domanda. shouldContinue DEVE essere false. nextQuestion e nextOptions DEVONO essere null." : `Siamo al livello ${context.currentDepth}. Se la risposta è già molto profonda e vulnerabile, puoi fermarti (shouldContinue: false). Altrimenti scendi al livello ${context.currentDepth + 1}.`}
+
+PAROLE VIETATE: universo, energia, vibrazioni, manifestare, allineare, frequenza, risonanza, abbondanza, positività
+PAROLE PREFERITE: fame, radice, ombra, specchio, soglia, silenzio, peso, nudità, verità, corpo, terra, notte, luce cruda
+
+Rispondi SOLO con JSON valido:
+{"reflection": "...", "nextQuestion": "..." o null, "nextOptions": {"opening": "...", "resistance": "...", "uncertainty": "..."} o null, "shouldContinue": true/false, "depth": ${forceStop ? maxDepth : context.currentDepth + 1}}`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema natale: Sole ${context.profile.sunSign || "?"}, Luna ${context.profile.moonSign || "?"}, Asc. ${context.profile.risingSign || "?"}
+Ombre: ${context.profile.shadows?.join(", ") || "N/A"}
+Forze: ${context.profile.strengths?.join(", ") || "N/A"}
+
+Contesto astrologico (invisibile all'utente): ${context.astroContext}
+
+Sessione corrente:
+${context.sessionAnswers.map((a) => `[Livello ${a.depth}] D: ${a.question} → R: ${a.answer}`).join("\n")}
+
+Domanda appena risposta: ${context.currentQuestion}
+Risposta data: ${context.currentAnswer}
+
+${context.recentAnswers.length > 0 ? `Risposte delle ultime settimane:\n${context.recentAnswers.slice(0, 8).map((a) => `D: ${a.question} → R: ${a.answer}`).join("\n")}` : ""}
+
+Genera il rispecchiamento e, se appropriato, la prossima domanda.`,
+      },
+    ],
+  });
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Failed to parse mirror descent JSON");
+  return JSON.parse(jsonMatch[0]);
 }
