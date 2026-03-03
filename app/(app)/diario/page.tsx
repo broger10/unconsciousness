@@ -177,7 +177,7 @@ export default function DiarioPage() {
   if (schermata === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center">
           <Compass size={36} className="text-amber ember-pulse mb-4" />
           <p className="text-text-muted text-sm font-ui">Carico lo specchio...</p>
         </motion.div>

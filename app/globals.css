@@ -312,6 +312,15 @@ body {
   scroll-snap-align: start;
 }
 
+/* Nav badge — cosmic star text glow */
+@keyframes star-glow-text {
+  0%, 100% { opacity: 0.5; text-shadow: 0 0 4px rgba(201,168,76,0.4); }
+  50% { opacity: 1; text-shadow: 0 0 8px rgba(201,168,76,0.6), 0 0 16px rgba(201,168,76,0.3); }
+}
+.star-glow-text {
+  animation: star-glow-text 2.5s ease-in-out infinite;
+}
+
 /* Nav center button — ambient 8s glow */
 @keyframes star-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(201,168,76,0.15); }
@@ -382,30 +391,38 @@ body {
 /* Il Cielo Interiore — star sky background */
 .cielo-bg {
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(78,158,138,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 70%, rgba(201,169,110,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 15%, rgba(78,158,138,0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 75% 25%, rgba(201,169,110,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(196,97,74,0.03) 0%, transparent 35%),
     radial-gradient(ellipse at 50% 50%, rgba(10,26,15,1) 0%, rgba(15,36,21,1) 100%);
 }
 
 .cielo-dust {
   background-image:
-    radial-gradient(0.5px 0.5px at 8% 12%, rgba(201,169,110,0.12), transparent),
-    radial-gradient(0.5px 0.5px at 15% 67%, rgba(74,155,142,0.1), transparent),
-    radial-gradient(0.5px 0.5px at 25% 35%, rgba(201,169,110,0.08), transparent),
-    radial-gradient(0.5px 0.5px at 38% 88%, rgba(74,155,142,0.08), transparent),
-    radial-gradient(0.5px 0.5px at 45% 22%, rgba(201,169,110,0.1), transparent),
-    radial-gradient(0.5px 0.5px at 58% 55%, rgba(240,230,200,0.06), transparent),
-    radial-gradient(0.5px 0.5px at 67% 78%, rgba(201,169,110,0.08), transparent),
-    radial-gradient(0.5px 0.5px at 75% 15%, rgba(74,155,142,0.1), transparent),
-    radial-gradient(0.5px 0.5px at 82% 42%, rgba(201,169,110,0.06), transparent),
-    radial-gradient(0.5px 0.5px at 92% 68%, rgba(74,155,142,0.08), transparent);
+    radial-gradient(0.5px 0.5px at 8% 12%, rgba(201,169,110,0.14), transparent),
+    radial-gradient(0.5px 0.5px at 15% 67%, rgba(74,155,142,0.12), transparent),
+    radial-gradient(0.5px 0.5px at 25% 35%, rgba(201,169,110,0.1), transparent),
+    radial-gradient(0.5px 0.5px at 38% 88%, rgba(74,155,142,0.1), transparent),
+    radial-gradient(0.5px 0.5px at 45% 22%, rgba(201,169,110,0.12), transparent),
+    radial-gradient(0.5px 0.5px at 58% 55%, rgba(240,230,200,0.08), transparent),
+    radial-gradient(0.5px 0.5px at 67% 78%, rgba(201,169,110,0.1), transparent),
+    radial-gradient(0.5px 0.5px at 75% 15%, rgba(74,155,142,0.12), transparent),
+    radial-gradient(0.5px 0.5px at 82% 42%, rgba(201,169,110,0.08), transparent),
+    radial-gradient(0.5px 0.5px at 92% 68%, rgba(74,155,142,0.1), transparent),
+    radial-gradient(0.7px 0.7px at 4% 45%, rgba(240,230,200,0.1), transparent),
+    radial-gradient(0.5px 0.5px at 30% 8%, rgba(201,169,110,0.09), transparent),
+    radial-gradient(0.7px 0.7px at 52% 72%, rgba(74,155,142,0.07), transparent),
+    radial-gradient(0.5px 0.5px at 88% 30%, rgba(240,230,200,0.08), transparent),
+    radial-gradient(0.5px 0.5px at 70% 48%, rgba(201,169,110,0.06), transparent),
+    radial-gradient(0.7px 0.7px at 20% 90%, rgba(196,97,74,0.06), transparent);
   background-size: 100% 100%;
   animation: cielo-drift 60s linear infinite;
 }
 
 @keyframes cielo-drift {
   0% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(-8px) translateX(4px); }
+  33% { transform: translateY(-6px) translateX(3px); }
+  66% { transform: translateY(-2px) translateX(-3px); }
   100% { transform: translateY(0) translateX(0); }
 }
 
@@ -430,7 +447,7 @@ body {
 
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .cielo-dust {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust {
     animation: none !important;
   }
   .filo-toast-enter, .filo-fade-in {

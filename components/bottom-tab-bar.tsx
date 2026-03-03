@@ -51,7 +51,7 @@ export function BottomTabBar() {
                     "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 dimensional star-pulse",
                     active
                       ? "bg-amber text-bg-base"
-                      : "bg-bg-card border border-border text-amber"
+                      : "bg-bg-card border border-transparent text-amber"
                   )}
                 >
                   <tab.Icon size={20} />
@@ -60,7 +60,7 @@ export function BottomTabBar() {
                 <span className={cn("transition-all relative", active && "scale-110")}>
                   <tab.Icon size={20} />
                   {showBadge && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber star-glow" style={{ color: "#C9A84C" }} />
+                    <span className="absolute -top-2 -right-1.5 text-[12px] text-amber star-glow-text leading-none">✦</span>
                   )}
                 </span>
               )}

@@ -129,12 +129,13 @@ function ConstellationLines({
       <motion.path
         d={pathD}
         fill="none"
-        stroke="rgba(201,169,110,0.15)"
-        strokeWidth="0.15"
+        stroke="rgba(201,169,110,0.2)"
+        strokeWidth="0.18"
         strokeLinecap="round"
+        strokeDasharray="0.8 0.4"
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 2, ease: premium }}
+        transition={{ duration: 2.5, ease: premium }}
       />
     </svg>
   );
@@ -187,21 +188,24 @@ function StarDetail({
           <div className="w-8 h-1 rounded-full bg-text-muted/30" />
         </div>
 
-        <div className="px-6 pb-6 pt-2">
+        <div className="px-6 pb-6 pt-2 relative">
+          {/* Subtle glow behind content */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full blur-[60px] pointer-events-none opacity-30" style={{ backgroundColor: config.hex }} />
+
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="relative flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${config.hex}15` }}
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: `${config.hex}15`, boxShadow: `0 0 12px ${config.hex}20` }}
               >
                 <Icon size={16} style={{ color: config.hex }} />
               </div>
               <div>
-                <div className={`text-xs font-ui tracking-wide ${config.color}`}>
+                <div className={`text-xs font-display tracking-wide ${config.color}`}>
                   {isConstellation ? (star.metadata?.name as string) || "Costellazione" : config.label.toUpperCase()}
                 </div>
-                <div className="text-[10px] text-text-muted font-body">{dateStr}</div>
+                <div className="text-[11px] text-text-muted font-body">{dateStr}</div>
               </div>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-bg-glass transition-colors">
@@ -210,13 +214,14 @@ function StarDetail({
           </div>
 
           {/* Content */}
-          <p className="text-text-primary font-body text-lg leading-relaxed italic">
-            {isConstellation ? `"${star.content}"` : star.content}
+          <p className="relative text-text-primary font-body text-lg leading-relaxed italic">
+            {isConstellation ? `\u201C${star.content}\u201D` : star.content}
           </p>
 
           {isConstellation && (
-            <div className="mt-4 pt-3 border-t border-border/30">
-              <div className="text-[10px] text-text-muted font-ui tracking-wide">
+            <div className="mt-5 pt-3 border-t border-border/20">
+              <div className="text-[11px] text-text-secondary font-ui tracking-wide flex items-center gap-1.5">
+                <Sparkle size={10} style={{ color: config.hex }} />
                 COSTELLAZIONE SETTIMANALE
               </div>
             </div>
@@ -254,7 +259,7 @@ function WeekSelector({
       >
         <ChevronLeft size={14} className="text-text-muted" />
       </button>
-      <span className="text-[11px] text-text-muted font-ui tracking-wide min-w-[120px] text-center">
+      <span className="text-xs text-text-secondary font-ui tracking-wide min-w-[120px] text-center">
         {weekOffset === 0 ? "Questa settimana" : `${fmt(weekStart)} – ${fmt(weekEnd)}`}
       </span>
       <button
@@ -273,11 +278,24 @@ function WeekSelector({
 function EmptySky() {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
-      <Sparkle size={24} className="text-amber/40 mb-3" />
-      <p className="text-text-muted text-sm font-body italic text-center leading-relaxed">
-        Il tuo cielo si sta formando.<br />
-        Ogni giorno apparira una nuova stella.
-      </p>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease: premium }}
+        className="flex flex-col items-center"
+      >
+        <div className="relative mb-6">
+          <Sparkle size={28} className="text-amber/50 ember-pulse" />
+          <div className="absolute inset-0 w-28 h-28 -left-8 -top-8 rounded-full blur-[40px] bg-amber/5 pointer-events-none" />
+        </div>
+        <p className="text-text-secondary text-sm font-body italic text-center leading-relaxed mb-2">
+          Il tuo cielo si sta formando.
+        </p>
+        <p className="text-text-muted text-xs font-body italic text-center leading-relaxed">
+          Ogni giorno una nuova stella apparir&agrave; qui sopra,<br />
+          tracciando la mappa della tua coscienza.
+        </p>
+      </motion.div>
     </div>
   );
 }
@@ -343,7 +361,7 @@ export default function MappaPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center cielo-bg">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center">
           <Compass size={36} className="text-verdigris ember-pulse mb-4" />
           <p className="text-text-muted text-sm font-ui">Leggo le stelle...</p>
         </motion.div>
@@ -372,9 +390,21 @@ export default function MappaPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold font-display">Il Cielo Interiore</h1>
-            <p className="text-[10px] text-text-muted font-body italic">{todayDate}</p>
+            <p className="text-xs text-text-secondary font-body italic">{todayDate}</p>
           </div>
-          <MoonPhaseIcon />
+          <div className="flex items-center gap-3">
+            {stars.length > 0 && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-[11px] text-amber/60 font-ui"
+              >
+                {stars.length} {stars.length === 1 ? "stella" : "stelle"}
+              </motion.span>
+            )}
+            <MoonPhaseIcon />
+          </div>
         </div>
       </motion.div>
 
@@ -389,9 +419,18 @@ export default function MappaPage() {
 
       {/* Star Field */}
       <div className="relative z-10 mx-4" style={{ height: "calc(100vh - 200px)" }}>
+        {/* Ambient center glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: "radial-gradient(ellipse at 50% 45%, rgba(201,168,76,0.04) 0%, transparent 60%)",
+        }} />
+        {/* Horizon fade at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none" style={{
+          background: "linear-gradient(to top, rgba(10,26,15,0.8) 0%, transparent 100%)",
+        }} />
+
         {filteredStars.length === 0 && weekOffset > 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-text-muted text-sm font-body italic">Nessuna stella in questa settimana.</p>
+            <p className="text-text-secondary text-sm font-body italic">Nessuna stella in questa settimana.</p>
           </div>
         ) : filteredStars.length === 0 ? (
           <EmptySky />
@@ -432,7 +471,7 @@ export default function MappaPage() {
                 onClick={() => setSelectedStar(c)}
                 className="pointer-events-auto"
               >
-                <span className="text-xs text-amber/50 font-display italic tracking-wide">
+                <span className="text-sm text-amber/60 font-display italic tracking-wide">
                   {(c.metadata?.name as string) || "Costellazione"}
                 </span>
               </button>
@@ -443,8 +482,8 @@ export default function MappaPage() {
         {/* Today's star label */}
         {weekOffset === 0 && todayStar && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.8 }}
             className="absolute pointer-events-none"
             style={{
@@ -453,8 +492,8 @@ export default function MappaPage() {
               transform: "translateX(-50%)",
             }}
           >
-            <span className={`text-[9px] font-ui tracking-wider ${!todayStar.read ? "text-amber" : "text-text-muted"}`}>
-              {!todayStar.read ? "NUOVA" : "OGGI"}
+            <span className={`text-[11px] font-display italic tracking-wider ${!todayStar.read ? "text-amber star-glow-text" : "text-text-secondary"}`}>
+              {!todayStar.read ? "nuova stella" : "oggi"}
             </span>
           </motion.div>
         )}
@@ -465,15 +504,15 @@ export default function MappaPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="relative z-20 px-6 pb-20 flex justify-center gap-4 flex-wrap"
+        className="relative z-20 px-6 pb-20 flex justify-center gap-5 flex-wrap"
       >
         {Object.entries(categoryConfig).map(([key, cfg]) => (
           <div key={key} className="flex items-center gap-1.5">
             <div
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: cfg.hex }}
+              style={{ backgroundColor: cfg.hex, boxShadow: `0 0 6px ${cfg.hex}60` }}
             />
-            <span className="text-[9px] text-text-muted font-ui">{cfg.label}</span>
+            <span className="text-[11px] text-text-secondary font-ui">{cfg.label}</span>
           </div>
         ))}
       </motion.div>
