@@ -17,9 +17,10 @@ export const SIGN_DEGREES: Record<string, number> = {
 // Major aspects and their degree separations
 export const ASPECTS = {
   congiunzione: { degrees: 0, symbol: "☌", orb: 3 },
-  opposizione: { degrees: 180, symbol: "☍", orb: 3 },
-  trigono: { degrees: 120, symbol: "△", orb: 3 },
+  sestile: { degrees: 60, symbol: "⚹", orb: 3 },
   quadratura: { degrees: 90, symbol: "□", orb: 3 },
+  trigono: { degrees: 120, symbol: "△", orb: 3 },
+  opposizione: { degrees: 180, symbol: "☍", orb: 3 },
 } as const;
 
 export type AspectType = keyof typeof ASPECTS;
@@ -113,6 +114,7 @@ export function findSignificantTransits(
   aspect: AspectType;
   natalPlanet: string;
   description: string;
+  weight: number;
 }> {
   const currentTransits = getCurrentTransits(date);
   const results: Array<{
@@ -154,9 +156,57 @@ export function findSignificantTransits(
     }
   }
 
-  // Sort by significance and return top 3
+  // Sort by significance and return top 5
   results.sort((a, b) => b.weight - a.weight);
-  return results.slice(0, 3).map(({ weight: _w, ...rest }) => rest);
+  return results.slice(0, 5);
+}
+
+// Approximate retrograde periods for 2026 (month ranges)
+// Outer planets are retrograde ~40-50% of the year
+const RETROGRADE_PERIODS_2026: Record<string, [number, number][]> = {
+  Mercurio: [[1, 2], [5, 6], [9, 10]], // ~3 retrogrades per year
+  Venere: [[3, 4]], // ~1 retrograde per year
+  Marte: [[1, 2]], // ~1 retrograde every 2 years
+  Giove: [[7, 11]], // ~4 months retrograde
+  Saturno: [[6, 10]], // ~4.5 months retrograde
+  Urano: [[1, 1], [8, 12]], // ~5 months retrograde
+  Nettuno: [[7, 12]], // ~5.5 months retrograde
+  Plutone: [[5, 10]], // ~5-6 months retrograde
+};
+
+export function getRetrogradePlanets(date?: Date): string[] {
+  const now = date || new Date();
+  const month = now.getMonth() + 1; // 1-12
+  const retro: string[] = [];
+  for (const [planet, periods] of Object.entries(RETROGRADE_PERIODS_2026)) {
+    for (const [start, end] of periods) {
+      if (month >= start && month <= end) {
+        retro.push(planet);
+        break;
+      }
+    }
+  }
+  return retro;
+}
+
+// Aspect intensity scoring (0-1) based on planet weight and aspect type
+export function getAspectIntensity(
+  transitPlanet: string,
+  aspectType: AspectType,
+  exactness: number
+): number {
+  const planetWeight: Record<string, number> = {
+    Plutone: 1.0, Nettuno: 0.9, Urano: 0.85, Saturno: 0.8, Giove: 0.7,
+    Marte: 0.5, Sole: 0.6, Venere: 0.4, Mercurio: 0.3, Luna: 0.2,
+  };
+  const aspectWeight: Record<string, number> = {
+    congiunzione: 1.0, opposizione: 0.9, quadratura: 0.8,
+    trigono: 0.7, sestile: 0.5,
+  };
+  const pw = planetWeight[transitPlanet] || 0.3;
+  const aw = aspectWeight[aspectType] || 0.5;
+  const exactBonus = 1 - (exactness / 3) * 0.3; // closer = stronger
+  return Math.min(1, pw * aw * exactBonus);
 }
 
 // Lunar phases 2026-2027 (approximate dates)

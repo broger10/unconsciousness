@@ -26,6 +26,7 @@ model User {
   lunarRituals    LunarRitual[]
   pushSubscriptions PushSubscription[]
   mapInsights       MapInsight[]
+  dailyTransits     DailyTransit[]
   specchioCapitoli  SpecchioCapitolo[]
   specchioConsigli  SpecchioConsiglio[]
   createdAt     DateTime  @default(now())
@@ -260,6 +261,21 @@ model MapInsight {
   createdAt DateTime @default(now())
 
   @@unique([userId, date, type])
+  @@index([userId, date])
+}
+
+model DailyTransit {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  transitData    Json     // {transits, aspects, retrogrades}
+  interpretation Json     // {respiro, sussurro, seme}
+  dailyTheme     Json     // {primary, secondary, accent HSL}
+  sigilSvg       String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
   @@index([userId, date])
 }
 

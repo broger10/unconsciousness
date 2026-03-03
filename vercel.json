@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/sky/pregenerations",
+      "schedule": "0 3 * * *"
+    },
+    {
       "path": "/api/cron/morning-push",
       "schedule": "0 6 * * *"
     }

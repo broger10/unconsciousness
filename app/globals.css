@@ -445,9 +445,37 @@ body {
 .star-glow { animation: star-glow 4s ease-in-out infinite; }
 .star-today { animation: star-today 3s ease-in-out infinite; }
 
+/* Il Cielo — word-by-word reveal */
+@keyframes word-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.word-reveal {
+  animation: word-reveal 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+/* Il Cielo — sigil breathing pulse */
+@keyframes sigil-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.sigil-pulse {
+  animation: sigil-pulse 4s ease-in-out infinite;
+}
+
+/* Il Cielo — moment indicator dot */
+@keyframes dot-active {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+.dot-active {
+  animation: dot-active 2s ease-in-out infinite;
+}
+
 /* Accessibility — respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust {
+  .ember-pulse, .float, .breathe, .flicker, .shimmer, .aurora-bg, .oracle-badge, .premium-glow, .filo-shimmer, .filo-pulse, .star-pulse, .scroll-hint, .star-glow, .star-today, .star-glow-text, .cielo-dust, .sigil-pulse, .word-reveal, .dot-active {
     animation: none !important;
   }
   .filo-toast-enter, .filo-fade-in {
@@ -455,6 +483,9 @@ body {
   }
   .onb-fade-in, .onb-star-hero, .onb-star-dot {
     animation: none !important;
+    opacity: 1 !important;
+  }
+  .word-reveal {
     opacity: 1 !important;
   }
   .grain::after {

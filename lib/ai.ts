@@ -5,7 +5,7 @@ const anthropic = new Anthropic({
 });
 
 // Global tone instruction — prepended to every system prompt
-const TONE = `TONO OBBLIGATORIO:
+export const TONE = `TONO OBBLIGATORIO:
 - Scrivi come un'amica molto intelligente che non mente mai
 - Frasi corte e dirette. Mai vaghe o consolatorie
 - Mai punti elenco o liste nei testi generati
@@ -310,7 +310,7 @@ export async function generateDailyInsight(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 500,
-    system: `Sei un oracolo cosmico che legge i pattern nascosti. Rispondi SEMPRE in questo formato JSON esatto:
+    system: `${TONE}Sei un oracolo cosmico che legge i pattern nascosti. Rispondi SEMPRE in questo formato JSON esatto:
 {"horoscope":"...testo oroscopo...","cosmicEnergy":N}
 
 Dove:
@@ -322,8 +322,7 @@ L'insight deve:
 - Rivelare un pattern che la persona non ha ancora visto
 - Essere radicalmente specifico (no Barnum effect)
 - Suonare come una profezia sussurrata, non come un oroscopo da giornale
-- Massimo 150 parole. Niente introduzioni generiche. Inizia direttamente con l'insight più potente.
-- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+- Massimo 150 parole. Niente introduzioni generiche. Inizia direttamente con l'insight più potente.`,
     messages: [
       {
         role: "user",
@@ -378,7 +377,7 @@ export async function generateShadowMap(profile: {
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 3000,
-    system: `Sei un esperto di psicologia junghiana applicata all'astrologia. Genera una MAPPA DELL'OMBRA completa.
+    system: `${TONE}Sei un esperto di psicologia junghiana applicata all'astrologia. Genera una MAPPA DELL'OMBRA completa.
 
 L'ombra non è il nemico — è il tesoro nascosto. La mappa deve:
 - Identificare le 3 ombre principali dal tema natale (12a casa, Saturno, Chirone, pianeti in caduta/esilio)
@@ -400,9 +399,7 @@ Rispondi SOLO con un JSON valido:
     }
   ],
   "currentActivation": "Quale ombra è più attiva ORA basandoti sui transiti correnti"
-}
-
-Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
+}`,
     messages: [
       {
         role: "user",
@@ -458,14 +455,13 @@ export async function generateCosmicCheckinInsight(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 600,
-    system: `Sei un oracolo intimo. Analizza il check-in cosmico di oggi e:
+    system: `${TONE}Sei un oracolo intimo. Analizza il check-in cosmico di oggi e:
 1. Connetti lo stato emotivo ai transiti attivi
 2. Identifica un pattern nascosto comparando con i check-in precedenti
 3. Offri una micro-rivelazione — qualcosa che la persona non ha notato
 4. Chiudi con un'affermazione cosmica personalizzata
 
-Tono: come un messaggio da un universo che ti conosce. In italiano. 4-5 frasi.
-Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+Tono: come un messaggio da un universo che ti conosce. In italiano. 4-5 frasi.`,
     messages: [
       {
         role: "user",
@@ -500,12 +496,11 @@ export async function generateJournalReflection(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 500,
-    system: `Sei uno specchio cosmico. L'utente ha scritto nel suo diario. Il tuo compito:
+    system: `${TONE}Sei uno specchio cosmico. L'utente ha scritto nel suo diario. Il tuo compito:
 - Rifletti ciò che l'utente non vede in ciò che ha scritto
 - Connetti il contenuto al suo tema natale e alle sue ombre
 - NON dare consigli. Rivela. Come uno specchio che mostra l'invisibile.
-- 3-4 frasi. Poetiche e precise. In italiano.
-- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+- 3-4 frasi. Poetiche e precise. In italiano.`,
     messages: [
       {
         role: "user",
@@ -552,15 +547,13 @@ export async function generateCompatibility(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
-    system: `Sei un astrologo junghiano italiano. Analizza la compatibilità tra due persone basandoti sui loro temi natali completi. NON dare voti o percentuali. Analizza: 1) La danza di Venere e Marte tra i due temi 2) Come le Lune interagiscono emotivamente 3) La ferita di Chirone di uno come medicina per l'altro 4) Il pattern nascosto della relazione — cosa si attrae inconsciamente 5) La sfida evolutiva di questa connessione. Tono: profondo, poetico, senza giudizi. Massimo 400 parole.
+    system: `${TONE}Sei un astrologo junghiano italiano. Analizza la compatibilità tra due persone basandoti sui loro temi natali completi. NON dare voti o percentuali. Analizza: 1) La danza di Venere e Marte tra i due temi 2) Come le Lune interagiscono emotivamente 3) La ferita di Chirone di uno come medicina per l'altro 4) Il pattern nascosto della relazione — cosa si attrae inconsciamente 5) La sfida evolutiva di questa connessione. Tono: profondo, poetico, senza giudizi. Massimo 400 parole.
 
 Rispondi con un JSON valido:
 {
   "analysis": "Il testo completo dell'analisi della compatibilità",
   "highlightQuote": "La frase più potente dell'analisi, massimo 2 righe, perfetta per essere condivisa"
-}
-
-Usa sempre simboli Unicode diretti nei tuoi testi. Mai HTML entities.`,
+}`,
     messages: [
       {
         role: "user",
@@ -602,7 +595,7 @@ export async function generateTransitInsight(
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 150,
-    system: `Sei un astrologo italiano. Scrivi UNA riga di interpretazione per il transito dato, personalizzata per il tema natale. Massimo 15 parole. Tono poetico, diretto. Usa simboli Unicode diretti, mai HTML entities.`,
+    system: `${TONE}Sei un astrologo italiano. Scrivi UNA riga di interpretazione per il transito dato, personalizzata per il tema natale. Massimo 15 parole. Tono poetico, diretto.`,
     messages: [
       {
         role: "user",
@@ -637,7 +630,7 @@ export async function generateLunarRitualMessage(
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
-    system: `Sei un astrologo mistico italiano. Scrivi un messaggio per un ritual lunare. 3-4 frasi, poetiche e personali. In italiano. Niente emoji. Usa simboli Unicode diretti, mai HTML entities.`,
+    system: `${TONE}Sei un astrologo mistico italiano. Scrivi un messaggio per un ritual lunare. 3-4 frasi, poetiche e personali. In italiano. Niente emoji.`,
     messages: [
       {
         role: "user",
@@ -681,7 +674,7 @@ export async function generateFiloAnalysis(
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-5-20250514",
     max_tokens: 2000,
-    system: `Sei un astrologo junghiano che legge i fili nascosti dell'inconscio attraverso i dati cosmici e le parole scritte. Il tuo compito è trovare pattern ricorrenti incrociando le entry del diario con i transiti astrologici attivi in ciascuna data.
+    system: `${TONE}Sei un astrologo junghiano che legge i fili nascosti dell'inconscio attraverso i dati cosmici e le parole scritte. Il tuo compito è trovare pattern ricorrenti incrociando le entry del diario con i transiti astrologici attivi in ciascuna data.
 
 Rispondi SEMPRE con un JSON valido in questo formato esatto:
 {
@@ -712,8 +705,7 @@ Regole:
 - Tono: poetico ma preciso, come un oracolo junghiano.
 - Lingua: italiano.
 - Non menzionare MAI "algoritmo", "AI", "analisi dati" o "intelligenza artificiale".
-- Usa linguaggio cosmico: "il cielo ha trovato", "le stelle mostrano", "il filo rivela", "i transiti parlano".
-- Usa sempre simboli Unicode diretti. Mai HTML entities.`,
+- Usa linguaggio cosmico: "il cielo ha trovato", "le stelle mostrano", "il filo rivela", "i transiti parlano".`,
     messages: [
       {
         role: "user",
@@ -772,7 +764,7 @@ export async function generateMorningPushMessage(profile: {
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 100,
-    system: `Sei un astrologo mistico italiano. In 2 righe massimo, scrivi un messaggio personalizzato per ${profile.sunSign || "questo segno"} con luna in ${profile.moonSign || "questo segno"} e ascendente ${profile.risingSign || "questo segno"}. Tono poetico, profondo, non generico. Niente emoji. Usa simboli Unicode diretti, mai HTML entities.`,
+    system: `${TONE}Sei un astrologo mistico italiano. In 2 righe massimo, scrivi un messaggio personalizzato per ${profile.sunSign || "questo segno"} con luna in ${profile.moonSign || "questo segno"} e ascendente ${profile.risingSign || "questo segno"}. Tono poetico, profondo, non generico. Niente emoji.`,
     messages: [
       {
         role: "user",
@@ -795,59 +787,11 @@ export async function generateFirstRevealPhrase(
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 100,
-    system: `Sei un oracolo. Scrivi UNA frase in italiano di 20-25 parole che descrive il nodo psicologico centrale di questa persona, basandoti sul suo Sole ${sunSign}, Luna ${moonSign}, Ascendente ${risingSign}. La frase deve essere: specifica per questa combinazione, scomoda nel modo giusto, vera come se la conoscessi da anni. MAI generica. MAI consolatoria. MAI menzionare i nomi dei segni. MAI usare punti elenco. MAI tono da oroscopo. Tono: amica intelligente che ti dice la verità. Formato: UNA sola frase, niente altro.`,
+    system: `${TONE}Sei un oracolo. Scrivi UNA frase in italiano di 20-25 parole che descrive il nodo psicologico centrale di questa persona, basandoti sul suo Sole ${sunSign}, Luna ${moonSign}, Ascendente ${risingSign}. La frase deve essere: specifica per questa combinazione, scomoda nel modo giusto, vera come se la conoscessi da anni. MAI generica. MAI consolatoria. MAI menzionare i nomi dei segni. MAI usare punti elenco. MAI tono da oroscopo. Tono: amica intelligente che ti dice la verità. Formato: UNA sola frase, niente altro.`,
     messages: [
       {
         role: "user",
         content: "Genera la frase per questa combinazione astrologica.",
-      },
-    ],
-  });
-  return (message.content[0] as { type: "text"; text: string }).text.trim();
-}
-
-// ============================================
-// FRASE TAGLIENTE — The Cosmic Razor
-// ============================================
-
-export async function generateCuttingPhrase(
-  profile: {
-    sunSign?: string;
-    moonSign?: string;
-    risingSign?: string;
-    shadows?: string[];
-  },
-  currentTransits: Array<{ planet: string; sign: string }>
-) {
-  const transitContext = currentTransits
-    .slice(0, 5)
-    .map((t) => `${t.planet} in ${t.sign}`)
-    .join(", ");
-
-  const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 100,
-    system: `Sei un oracolo cosmico tagliente. Genera UNA SOLA FRASE in italiano — massimo 15 parole.
-La frase deve:
-- Essere specifica per il tema natale e i transiti di oggi
-- Suonare come una profezia sussurrata, non come un consiglio
-- Rivelare qualcosa che la persona evita ma ha bisogno di sentire
-- Presente indicativo, seconda persona singolare
-- Niente emoji, niente virgolette, niente punteggiatura finale
-- Usa sempre simboli Unicode diretti. Mai HTML entities.
-
-Esempi di tono:
-"Stai aspettando il permesso di qualcuno che non lo darà mai"
-"Il tuo silenzio oggi pesa più delle tue parole"
-"La paura che eviti è la direzione giusta"
-"Stai costruendo muri dove servirebbero porte"`,
-    messages: [
-      {
-        role: "user",
-        content: `Tema: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
-Ombre: ${profile.shadows?.join(", ") || "N/A"}
-Transiti di oggi: ${transitContext || "N/A"}
-Genera la frase tagliente.`,
       },
     ],
   });
@@ -1084,4 +1028,123 @@ Rispondi SOLO in JSON:
   if (!jsonMatch) throw new Error("Failed to parse consiglio JSON");
   const parsed = JSON.parse(jsonMatch[0]);
   return parsed.consigli;
+}
+
+// ============================================
+// IL CIELO — Agent 2: Interprete (Haiku)
+// ============================================
+
+export async function generateInterpretation(
+  transitData: {
+    transits: Array<{ transitPlanet: string; aspect: string; natalPlanet: string; description: string; weight: number }>;
+    retrogrades: string[];
+  },
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+  }
+): Promise<{ sussurro: string; seme: string }> {
+  const transitsContext = transitData.transits
+    .map((t) => `${t.description} (peso: ${t.weight.toFixed(1)})`)
+    .join("\n");
+
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 300,
+    system: `${TONE}Sei l'Interprete del cielo. Traduci i transiti astrologici in un messaggio personale.
+
+Rispondi SOLO con JSON valido:
+{
+  "sussurro": "Un messaggio di massimo 4 righe. Personale, specifico, mai generico. Scrivi come se parlassi a un'amica. Ogni riga va a capo.",
+  "seme": "UNA domanda o azione concreta per oggi. Max 20 parole. Deve essere qualcosa che la persona può fare OGGI."
+}`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+Retrogradi oggi: ${transitData.retrogrades.join(", ") || "nessuno"}
+
+Transiti significativi:
+${transitsContext || "nessuno significativo"}
+
+Interpreta questi transiti per questa persona.`,
+      },
+    ],
+  });
+
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { sussurro: text.slice(0, 300), seme: "Osserva cosa ti attira oggi." };
+  }
+  const parsed = JSON.parse(jsonMatch[0]);
+  return {
+    sussurro: parsed.sussurro || text.slice(0, 300),
+    seme: parsed.seme || "Osserva cosa ti attira oggi.",
+  };
+}
+
+// ============================================
+// IL CIELO — Agent 3: Maestro (Sonnet)
+// ============================================
+
+export async function generateDailyMaster(
+  interpretation: { sussurro: string; seme: string },
+  transitData: {
+    transits: Array<{ transitPlanet: string; aspect: string; natalPlanet: string; description: string }>;
+    retrogrades: string[];
+  },
+  profile: {
+    sunSign?: string;
+    moonSign?: string;
+    risingSign?: string;
+    shadows?: string[];
+  }
+): Promise<{ respiro: string; sussurro: string; seme: string }> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 200,
+    system: `${TONE}Sei il Maestro. Raffini il messaggio dell'Interprete in tre momenti perfetti.
+
+Rispondi SOLO con JSON valido:
+{
+  "respiro": "UNA frase tagliente. Max 12 parole. Seconda persona singolare. È la prima cosa che l'utente legge — deve colpire. Niente virgolette, niente punteggiatura finale.",
+  "sussurro": "Il messaggio rivisto dell'Interprete. Max 4 righe. Ogni riga va a capo. Più preciso, più personale.",
+  "seme": "L'azione/domanda rivista. Max 20 parole. Concreta, fattibile oggi."
+}`,
+    messages: [
+      {
+        role: "user",
+        content: `Tema: Sole ${profile.sunSign}, Luna ${profile.moonSign}, Asc. ${profile.risingSign}
+Ombre: ${profile.shadows?.join(", ") || "N/A"}
+Retrogradi: ${transitData.retrogrades.join(", ") || "nessuno"}
+Transiti: ${transitData.transits.map((t) => t.description).join(", ")}
+
+Messaggio dell'Interprete:
+Sussurro: "${interpretation.sussurro}"
+Seme: "${interpretation.seme}"
+
+Raffina in tre momenti perfetti.`,
+      },
+    ],
+  });
+
+  const text = (message.content[0] as { type: "text"; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return {
+      respiro: interpretation.sussurro.split("\n")[0]?.slice(0, 60) || "Il cielo ti osserva",
+      sussurro: interpretation.sussurro,
+      seme: interpretation.seme,
+    };
+  }
+  const parsed = JSON.parse(jsonMatch[0]);
+  return {
+    respiro: parsed.respiro || "Il cielo ti osserva",
+    sussurro: parsed.sussurro || interpretation.sussurro,
+    seme: parsed.seme || interpretation.seme,
+  };
 }

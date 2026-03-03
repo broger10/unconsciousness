@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Home, Compass, Sparkles, ScanEye, User, type LucideIcon } from "lucide-react";
 
 const tabs: { href: string; Icon: LucideIcon; label: string; center?: boolean }[] = [
-  { href: "/oggi", Icon: Home, label: "Oggi" },
+  { href: "/oggi", Icon: Home, label: "Il Cielo" },
   { href: "/mappa", Icon: Compass, label: "Mappa" },
   { href: "/chiedi", Icon: Sparkles, label: "Oracolo", center: true },
   { href: "/diario", Icon: ScanEye, label: "Specchio" },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { useCredits } from "@/lib/credits";
+import { TONE } from "@/lib/ai";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -80,7 +81,7 @@ CONSAPEVOLEZZA: ${profile.awarenessScore}%`
   const result = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 800,
-    system: `Sei l'Oracolo Cosmico di unconsciousness. Parli italiano con tono poetico ma accessibile.
+    system: `${TONE}Sei l'Oracolo Cosmico di unconsciousness. Parli italiano con tono poetico ma accessibile.
 Rispondi alle domande dell'utente incrociando TUTTI i dati raccolti: tema natale, mood recenti, riflessioni dal diario, e conversazioni precedenti.
 Sii specifico e personale. Mai generico. Ogni risposta deve far sentire l'utente profondamente capita/o.
 Non usare emoji o simboli Unicode decorativi nelle risposte.
