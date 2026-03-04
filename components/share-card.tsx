@@ -10,17 +10,22 @@ export interface FraseCardProps {
   moonSign: string;
   risingSign: string;
   date: string;
+  themeAccent?: string;
+  themePrimary?: string;
 }
 
 export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
-  ({ frase, sunSign, moonSign, risingSign, date }, ref) => {
+  ({ frase, sunSign, moonSign, risingSign, date, themeAccent, themePrimary }, ref) => {
+    // Build background: dark base + subtle theme glow
+    const accentColor = themeAccent || "#C9A84C";
+    const glowColor = themePrimary || "rgba(201,168,76,0.08)";
     return (
       <div
         ref={ref}
         style={{
           width: 1080,
           height: 1920,
-          background: "#0A1A0F",
+          background: "#050A05",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -33,7 +38,7 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
         {/* Star field */}
         <StarField />
 
-        {/* Ambient glow */}
+        {/* Ambient glow — theme color */}
         <div
           style={{
             position: "absolute",
@@ -43,8 +48,7 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
             width: 600,
             height: 600,
             borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%)",
+            background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
             pointerEvents: "none",
           }}
         />
@@ -104,7 +108,7 @@ export const FraseShareCard = forwardRef<HTMLDivElement, FraseCardProps>(
               fontSize: 72,
               fontWeight: 700,
               fontStyle: "italic",
-              color: "#C9A84C",
+              color: accentColor,
               lineHeight: 1.15,
               maxWidth: 900,
             }}

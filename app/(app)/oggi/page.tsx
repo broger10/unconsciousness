@@ -2,28 +2,17 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { LazyMarkdownText as MarkdownText } from "@/components/lazy-markdown";
 import { FraseShareCard, TransitShareCard } from "@/components/share-card";
 import { shareCardAsImage } from "@/lib/share";
 import {
-  Circle, CircleDashed, CircleDot, Diamond, Sparkles, Sparkle,
-  Moon, Share, Eye, Compass, BookOpen,
-  type LucideIcon,
+  Diamond, Sparkle, Moon, Share, Sun, ArrowUp, MoonStar,
 } from "lucide-react";
 
 const PushBanner = dynamic(() => import("@/components/push-banner").then(m => ({ default: m.PushBanner })), { ssr: false });
 
 const premium = [0.16, 1, 0.3, 1] as const;
-
-const moodIcons: { v: number; Icon: LucideIcon; l: string }[] = [
-  { v: 1, Icon: Circle, l: "Pesante" },
-  { v: 2, Icon: CircleDashed, l: "Bassa" },
-  { v: 3, Icon: CircleDot, l: "Neutra" },
-  { v: 4, Icon: Diamond, l: "Buona" },
-  { v: 5, Icon: Sparkles, l: "Radiante" },
-];
 
 interface SkyData {
   respiro: string;
@@ -55,8 +44,6 @@ export default function OggiPage() {
   const [userName, setUserName] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
-  const [todayMood, setTodayMood] = useState(0);
-  const [moodSaved, setMoodSaved] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [lunarRitual, setLunarRitual] = useState<{
@@ -80,13 +67,13 @@ export default function OggiPage() {
     if (!shareCardRef.current || sharing || !sky?.respiro) return;
     setSharing(true);
     try {
-      await shareCardAsImage(shareCardRef.current, "unconsciousness-cielo.png");
+      await shareCardAsImage(shareCardRef.current, "unconsciousness-cielo.png", sky.theme.primary);
     } catch {
       // Share cancelled or failed silently
     } finally {
       setSharing(false);
     }
-  }, [sharing, sky?.respiro]);
+  }, [sharing, sky?.respiro, sky?.theme.primary]);
 
   const handleShareRitual = useCallback(async () => {
     if (!transitCardRef.current || sharingRitual) return;
@@ -112,15 +99,6 @@ export default function OggiPage() {
       if (profileData.isPremium) setIsPremium(true);
       if (checkinData.streak) setStreak(checkinData.streak);
 
-      if (checkinData.checkins?.length > 0) {
-        const lastCheckin = new Date(checkinData.checkins[0].createdAt);
-        const today = new Date();
-        if (lastCheckin.toDateString() === today.toDateString()) {
-          setTodayMood(checkinData.checkins[0].mood);
-          setMoodSaved(true);
-        }
-      }
-
       if (skyData.respiro) {
         setSky(skyData);
       }
@@ -137,23 +115,8 @@ export default function OggiPage() {
     }).catch(() => { setLoading(false); });
   }, []);
 
-  const saveMood = async (mood: number) => {
-    setTodayMood(mood);
-    setMoodSaved(true);
-    try {
-      const res = await fetch("/api/checkin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mood, energy: mood }),
-      });
-      if (res.ok) {
-        setStreak((s) => s + 1);
-        if (credits !== null && !isPremium) setCredits((c) => c !== null ? Math.max(0, c - 2) : c);
-      }
-    } catch {
-      // Check-in already saved optimistically
-    }
-  };
+  // Keep isPremium used
+  void isPremium;
 
   const saveRitual = async () => {
     if (!ritualText.trim() || !lunarRitual?.ritualId || ritualSaving) return;
@@ -207,6 +170,12 @@ export default function OggiPage() {
   const today = new Date();
   const dateStr = today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
 
+  const cosmicSigns = [
+    { sign: profile.sunSign, label: "Sole", Icon: Sun },
+    { sign: profile.moonSign, label: "Luna", Icon: Moon },
+    { sign: profile.risingSign, label: "Asc.", Icon: ArrowUp },
+  ].filter((s) => s.sign);
+
   return (
     <div
       className="min-h-screen relative overflow-hidden"
@@ -256,6 +225,8 @@ export default function OggiPage() {
 
       {/* 3 Moments — AnimatePresence */}
       <AnimatePresence mode="wait">
+
+        {/* ── IL RESPIRO ── */}
         {moment === 0 && (
           <motion.div
             key="respiro"
@@ -263,39 +234,68 @@ export default function OggiPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.5, ease: premium }}
-            className="min-h-screen flex flex-col items-center justify-center px-6 py-20 relative"
+            className="min-h-screen flex flex-col items-center justify-between px-6 py-20 relative"
           >
-            {/* Sigil */}
-            {sky?.sigilSvg && (
-              <div
-                className="sigil-pulse mb-8"
-                style={{ width: 120, height: 120 }}
-                dangerouslySetInnerHTML={{ __html: sky.sigilSvg }}
-              />
-            )}
-
-            {/* The Respiro — word by word */}
-            <div className="text-center max-w-lg px-2">
-              {sky?.respiro ? (
-                <p className="text-display italic leading-tight" style={{ color: sky.theme.accent }}>
-                  {sky.respiro.split(" ").map((word, i) => (
-                    <span
-                      key={i}
-                      className="word-reveal inline-block mr-[0.3em]"
-                      style={{ animationDelay: `${i * 0.15}s` }}
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </p>
-              ) : (
-                <div className="text-display text-amber/20 italic">
-                  <span className="filo-shimmer inline-block w-full h-12 rounded-lg" />
+            {/* Firma cosmica — 3 segni in alto */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8, ease: premium }}
+              className="flex items-center gap-6"
+            >
+              {cosmicSigns.map(({ sign, label, Icon }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5">
+                  <Icon size={11} className="text-amber/40" />
+                  <span className="text-[9px] font-ui text-text-muted/40 tracking-wider uppercase">{label}</span>
+                  <span className="text-[11px] font-ui text-text-muted/60">{sign}</span>
                 </div>
+              ))}
+            </motion.div>
+
+            {/* Sigil + Frase — centro assoluto */}
+            <div className="flex flex-col items-center flex-1 justify-center">
+              {/* Sigil piccolo e discreto */}
+              {sky?.sigilSvg && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 0.6, scale: 1 }}
+                  transition={{ delay: 0.5, duration: 1, ease: premium }}
+                  className="sigil-pulse mb-8"
+                  style={{ width: 72, height: 72 }}
+                  dangerouslySetInnerHTML={{ __html: sky.sigilSvg }}
+                />
               )}
+
+              {/* La Frase — protagonista assoluta */}
+              <div className="text-center px-1 max-w-[90vw]">
+                {sky?.respiro ? (
+                  <p
+                    className="font-display italic"
+                    style={{
+                      fontSize: "clamp(36px, 10vw, 64px)",
+                      lineHeight: 1.12,
+                      color: sky.theme.accent,
+                    }}
+                  >
+                    {sky.respiro.split(" ").map((word, i) => (
+                      <span
+                        key={i}
+                        className="word-reveal inline-block mr-[0.3em]"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </p>
+                ) : (
+                  <div className="h-24 flex items-center justify-center">
+                    <span className="filo-shimmer inline-block w-48 h-3 rounded-full bg-amber/10" />
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Share button */}
+            {/* Share button in basso */}
             {sky?.respiro && (
               <motion.button
                 initial={{ opacity: 0 }}
@@ -303,7 +303,7 @@ export default function OggiPage() {
                 transition={{ delay: 1.5, duration: 0.5 }}
                 onClick={handleShare}
                 disabled={sharing}
-                className="mt-10 flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber/20 text-amber/70 text-xs font-ui hover:border-amber/40 hover:text-amber transition-all disabled:opacity-40"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber/20 text-amber/70 text-xs font-ui hover:border-amber/40 hover:text-amber transition-all disabled:opacity-40"
               >
                 {sharing ? (
                   <span className="w-3.5 h-3.5 border-2 border-amber/30 border-t-amber rounded-full animate-spin" />
@@ -316,9 +316,7 @@ export default function OggiPage() {
 
             {/* Scroll hint */}
             <div className="absolute bottom-8 left-0 right-0 text-center">
-              <p className="text-text-muted text-xs font-ui scroll-hint">
-                Scorri →
-              </p>
+              <p className="text-text-muted text-xs font-ui scroll-hint">Scorri →</p>
             </div>
 
             {/* Hidden share card */}
@@ -331,12 +329,15 @@ export default function OggiPage() {
                   moonSign={profile.moonSign || ""}
                   risingSign={profile.risingSign || ""}
                   date={dateStr}
+                  themeAccent={sky.theme.accent}
+                  themePrimary={sky.theme.primary}
                 />
               </div>
             )}
           </motion.div>
         )}
 
+        {/* ── IL SUSSURRO ── */}
         {moment === 1 && (
           <motion.div
             key="sussurro"
@@ -344,26 +345,26 @@ export default function OggiPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.5, ease: premium }}
-            className="min-h-screen flex flex-col items-center justify-center px-6 py-20 relative"
+            className="min-h-screen flex flex-col items-center justify-center px-8 py-20 relative"
           >
-            {/* Sussurro text — line by line */}
-            <div className="text-center max-w-md">
+            {/* Sussurro text — linea per linea, font grande */}
+            <div className="w-full max-w-sm">
               {sky?.sussurro ? (
-                <div className="space-y-3">
+                <div className="space-y-5">
                   {sky.sussurro.split("\n").filter(Boolean).map((line, i) => (
                     <motion.p
                       key={i}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.4, duration: 0.6, ease: premium }}
-                      className="text-lg font-body italic text-text-primary leading-relaxed"
+                      className="text-2xl font-body italic text-text-primary leading-relaxed"
                     >
                       {line}
                     </motion.p>
                   ))}
                 </div>
               ) : (
-                <p className="text-text-muted font-body italic">Il cielo sussurra...</p>
+                <p className="text-text-muted font-body italic text-xl">Il cielo sussurra...</p>
               )}
             </div>
 
@@ -388,6 +389,7 @@ export default function OggiPage() {
           </motion.div>
         )}
 
+        {/* ── IL SEME ── */}
         {moment === 2 && (
           <motion.div
             key="seme"
@@ -397,9 +399,9 @@ export default function OggiPage() {
             transition={{ duration: 0.5, ease: premium }}
             className="min-h-screen px-4 pt-20 pb-32 overflow-y-auto relative"
           >
-            {/* Il Seme */}
             <div className="max-w-2xl mx-auto">
-              <div className="flex flex-col items-center justify-center min-h-[40vh] mb-8">
+              {/* Il Seme */}
+              <div className="flex flex-col items-center justify-center min-h-[50vh] mb-8">
                 <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-6">IL SEME DI OGGI</div>
                 {sky?.seme ? (
                   <motion.p
@@ -416,38 +418,6 @@ export default function OggiPage() {
                 )}
               </div>
 
-              {/* Mood Check-in */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ ease: premium }}
-                className="glass rounded-2xl p-6 dimensional mb-4"
-              >
-                <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-4 flex items-center gap-1">
-                  {moodSaved ? <><Diamond size={10} className="inline" /> REGISTRATO OGGI</> : "COME TI SENTI OGGI?"}
-                </div>
-                <div className="flex justify-between gap-2">
-                  {moodIcons.map((m) => (
-                    <button
-                      key={m.v}
-                      onClick={() => !moodSaved && saveMood(m.v)}
-                      disabled={moodSaved}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 flex-1 ${
-                        todayMood === m.v
-                          ? "glass glow text-amber scale-105"
-                          : moodSaved
-                          ? "opacity-30"
-                          : "hover:bg-bg-glass text-text-muted hover:text-amber"
-                      }`}
-                    >
-                      <m.Icon size={24} />
-                      <span className="text-[10px] font-ui">{m.l}</span>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-
               {/* Lunar Ritual (conditional) */}
               {lunarRitual?.active && (
                 <motion.div
@@ -462,7 +432,7 @@ export default function OggiPage() {
                   <div className="text-[10px] font-ui tracking-[0.2em] mb-4 flex items-center gap-1" style={{ color: lunarRitual.phase === "new_moon" ? "var(--verdigris)" : "var(--amber-glow)" }}>
                     {lunarRitual.phase === "new_moon"
                       ? <><Sparkle size={10} className="inline" /> LUNA NUOVA IN {lunarRitual.sign?.toUpperCase()}</>
-                      : <><Moon size={10} className="inline" /> LUNA PIENA IN {lunarRitual.sign?.toUpperCase()}</>}
+                      : <><MoonStar size={10} className="inline" /> LUNA PIENA IN {lunarRitual.sign?.toUpperCase()}</>}
                   </div>
 
                   {lunarRitual.completed ? (
@@ -540,41 +510,6 @@ export default function OggiPage() {
               {/* Push Banner */}
               <div className="mb-4">
                 <PushBanner />
-              </div>
-
-              {/* Per Te — quick links */}
-              <div className="mb-8">
-                <div className="text-[10px] text-text-muted font-ui tracking-[0.2em] mb-3 px-1">PER TE</div>
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
-                  <Link href="/chiedi" className="shrink-0 w-44">
-                    <div className="rounded-2xl p-5 border border-amber/10 bg-gradient-to-br from-amber/6 to-verdigris/3 dimensional h-full group hover:glow transition-all">
-                      <Sparkles size={24} className="text-amber mb-3" />
-                      <div className="text-sm font-bold font-display mb-1">Chiedi all&apos;oracolo</div>
-                      <div className="text-[10px] text-text-muted font-ui">Ogni domanda apre una porta</div>
-                    </div>
-                  </Link>
-                  <Link href="/visions" className="shrink-0 w-44">
-                    <div className="rounded-2xl p-5 border border-verdigris/10 bg-gradient-to-br from-verdigris/6 to-amber/3 dimensional h-full group hover:glow transition-all">
-                      <Compass size={24} className="text-verdigris mb-3" />
-                      <div className="text-sm font-bold font-display mb-1">Tre Destini</div>
-                      <div className="text-[10px] text-text-muted font-ui">Il tuo futuro, triplicato</div>
-                    </div>
-                  </Link>
-                  <Link href="/mappa" className="shrink-0 w-44">
-                    <div className="rounded-2xl p-5 border border-sienna/10 bg-gradient-to-br from-sienna/6 to-amber/3 dimensional h-full group hover:glow transition-all">
-                      <Eye size={24} className="text-sienna mb-3" />
-                      <div className="text-sm font-bold font-display mb-1">Le tue ombre</div>
-                      <div className="text-[10px] text-text-muted font-ui">Ci&ograve; che non vedi</div>
-                    </div>
-                  </Link>
-                  <Link href="/diario" className="shrink-0 w-44">
-                    <div className="rounded-2xl p-5 border border-amber-glow/10 bg-gradient-to-br from-amber-glow/5 to-amber/3 dimensional h-full group hover:glow transition-all">
-                      <BookOpen size={24} className="text-amber-glow mb-3" />
-                      <div className="text-sm font-bold font-display mb-1">Diario cosmico</div>
-                      <div className="text-[10px] text-text-muted font-ui">Scrivi e rifletti</div>
-                    </div>
-                  </Link>
-                </div>
               </div>
             </div>
           </motion.div>

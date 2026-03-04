@@ -6,14 +6,15 @@ import { toPng } from "html-to-image";
  */
 export async function shareCardAsImage(
   node: HTMLElement,
-  filename: string = "unconsciousness.png"
+  filename: string = "unconsciousness.png",
+  _themeColor?: string
 ): Promise<void> {
-  // Generate PNG at 2x quality then downscale for crisp output
+  // Generate PNG at 2x for crisp Retina quality (output: 2160×3840)
   const dataUrl = await toPng(node, {
     width: 1080,
     height: 1920,
-    pixelRatio: 1,
-    backgroundColor: "#0A1A0F",
+    pixelRatio: 2,
+    backgroundColor: undefined,
   });
 
   // Convert data URL to blob
